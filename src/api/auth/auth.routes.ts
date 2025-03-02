@@ -1,6 +1,7 @@
 import { Router } from "express";
 import AuthController from "./auth.controller";
 import { signinLimiter, signupLimiter } from "./auth.rateLimiting";
+import { validateSignin, validateSignup } from "./auth.validation";
 
 export default class AuthRouter {
   private router: Router;
@@ -16,11 +17,13 @@ export default class AuthRouter {
     this.router.post(
       "/signup",
       signupLimiter,
+      validateSignup,
       this.authController.signup
     );
     this.router.post(
       "/signin",
       signinLimiter,
+      validateSignin,
       this.authController.signin
     );
   }

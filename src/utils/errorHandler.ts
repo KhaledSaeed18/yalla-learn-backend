@@ -1,12 +1,17 @@
-type CustomError = Error & {
+interface CustomError extends Error {
     statusCode: number;
-    message: string | string[];
-};
+    status: string;
+    [key: string]: unknown; 
+}
 
-export const errorHandler = (statusCode: number, message: string | string[]) => {
-    const errorMessage = Array.isArray(message) ? message : [message];
-    const error = new Error(errorMessage.join(', ')) as CustomError;
+export const errorHandler = (statusCode: number, message: string, additionalData?: Record<string, unknown>) => {
+    const error = new Error(message) as CustomError;
     error.statusCode = statusCode;
-    error.message = errorMessage.join(', ');
+    error.status = statusCode >= 400 && statusCode < 500 ? "fail" : "error";
+
+    if (additionalData) {
+        Object.assign(error, additionalData);
+    }
+
     return error;
 };

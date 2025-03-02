@@ -39,10 +39,6 @@ export default class AuthController {
     try {
       const { email, password } = req.body;
 
-      if (!email || !password || email === "" || password === "") {
-        return next(errorHandler(400, "All fields are required"));
-      }
-
       const result = await this.authService.signin(email, password);
       res.status(200).json(result);
     } catch (err) {
