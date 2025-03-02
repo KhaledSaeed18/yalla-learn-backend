@@ -1,5 +1,6 @@
 import { Router } from "express";
 import AuthController from "./auth.controller";
+import { signinLimiter, signupLimiter } from "./auth.rateLimiting";
 
 export default class AuthRouter {
   private router: Router;
@@ -14,10 +15,12 @@ export default class AuthRouter {
   private initRoutes(): void {
     this.router.post(
       "/signup",
+      signupLimiter,
       this.authController.signup
     );
     this.router.post(
       "/signin",
+      signinLimiter,
       this.authController.signin
     );
   }
