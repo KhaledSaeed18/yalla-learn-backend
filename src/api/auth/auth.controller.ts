@@ -52,14 +52,14 @@ export default class AuthController {
   // Get login history controller
   async getLoginHistory(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = (req as any).user.id;
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const userId = req.user?.id as string;
 
-      const loginHistory = await this.authService.getLoginHistory(userId, limit);
+      const loginHistory = await this.authService.getLoginHistory(userId);
 
       res.status(200).json({
         status: "success",
         statusCode: 200,
+        message: "Login history fetched successfully",
         data: {
           loginHistory
         }

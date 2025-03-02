@@ -132,11 +132,10 @@ export class AuthService {
   }
 
   // Get login history for a user
-  public async getLoginHistory(userId: string, limit: number = 10) {
+  public async getLoginHistory(userId: string) {
     const loginHistory = await this.prisma.loginHistory.findMany({
       where: { userId: userId },
       orderBy: { loginTime: 'desc' },
-      take: limit,
     });
 
     return loginHistory;
