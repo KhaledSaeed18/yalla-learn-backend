@@ -9,6 +9,7 @@ export default class AuthController {
     this.authService = new AuthService();
     this.signup = this.signup.bind(this);
     this.signin = this.signin.bind(this);
+    this.getLoginHistory = this.getLoginHistory.bind(this);
   }
 
   // Signup controller
@@ -32,18 +33,39 @@ export default class AuthController {
     }
   }
 
-  // Signin controller
+  // Signin controller 
   async signin(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password } = req.body;
 
-      const result = await this.authService.signin(email, password);
+      const result = await this.authService.signin(email, password, req);
+
       res.status(200).json(result);
     } catch (err) {
       if ((err as Error).message === "Invalid email or password") {
         return next(errorHandler(401, "Invalid email or password"));
       }
       next(errorHandler(500, (err as Error).message || "Signin failed, Please try again"));
+    }
+  }
+
+  // Get login history controller
+  async getLoginHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = (req as any).user.id;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+
+      const loginHistory = await this.authService.getLoginHistory(userId, limit);
+
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        data: {
+          loginHistory
+        }
+      });
+    } catch (err) {
+      next(errorHandler(500, (err as Error).message || "Failed to fetch login history"));
     }
   }
 }

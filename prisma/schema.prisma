@@ -8,12 +8,32 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String @id @default(cuid())
   firstName String
   lastName  String
-  email     String   @unique
+  email     String @unique
   password  String
-  
+
+  LoginHistory LoginHistory[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model LoginHistory {
+  id         String   @id @default(cuid())
+  userId     String
+  ipAddress  String?
+  userAgent  String?
+  device     String?
+  location   String?
+  loginTime  DateTime @default(now())
+  successful Boolean  @default(true)
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }

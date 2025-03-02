@@ -29,6 +29,12 @@ export default class AuthRouter {
       validateSignin,
       this.authController.signin
     );
+
+    // Get user login history route
+    this.router.get(
+      "/login-history",
+      this.authController.getLoginHistory
+    );
   }
 
   // Returns the router object
