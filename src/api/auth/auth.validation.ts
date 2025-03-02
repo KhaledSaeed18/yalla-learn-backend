@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import { Request, Response, NextFunction } from 'express';
 import { errorHandler } from '../../utils/errorHandler';
-
-const BLOCKED_DOMAINS = ['test.com', 'example.com'];
+import { BLOCKED_DOMAINS, COMMON_PASSWORDS } from '../../constants/auth.constants';
 
 // Signup schema
 const signupSchema = z.object({
@@ -32,7 +31,11 @@ const signupSchema = z.object({
         .regex(/[a-z]/, "Password must contain at least one lowercase letter")
         .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
         .regex(/[0-9]/, "Password must contain at least one number")
-        .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
+        .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character")
+        .refine(
+            (password) => !COMMON_PASSWORDS.includes(password),
+            "This password is too common. Please choose a more unique password."
+        ),
 });
 
 // Signin schema
