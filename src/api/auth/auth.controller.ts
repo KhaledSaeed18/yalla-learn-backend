@@ -11,13 +11,10 @@ export default class AuthController {
     this.signin = this.signin.bind(this);
   }
 
+  // Signup controller
   async signup(req: Request, res: Response, next: NextFunction) {
     try {
       const { firstName, lastName, email, password } = req.body;
-
-      if (!firstName || !lastName || !email || !password || firstName === "" || lastName === "" || email === "" || password === "") {
-        return next(errorHandler(400, "All fields are required"));
-      }
 
       const result = await this.authService.signup(
         firstName,
@@ -35,6 +32,7 @@ export default class AuthController {
     }
   }
 
+  // Signin controller
   async signin(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password } = req.body;

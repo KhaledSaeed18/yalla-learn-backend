@@ -14,12 +14,15 @@ export default class AuthRouter {
   }
 
   private initRoutes(): void {
+    // Signup route
     this.router.post(
       "/signup",
       signupLimiter,
       validateSignup,
       this.authController.signup
     );
+
+    // Signin route
     this.router.post(
       "/signin",
       signinLimiter,
@@ -28,6 +31,7 @@ export default class AuthRouter {
     );
   }
 
+  // Returns the router object
   public getRouter(): Router {
     return this.router;
   }

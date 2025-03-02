@@ -32,6 +32,7 @@ interface ErrorWithProperties extends Error {
 }
 
 class ErrorMiddleware {
+  // Error handler middleware
   static handleError(err: ErrorWithProperties, req: Request, res: Response, next: NextFunction) {
     const statusCode = err.statusCode || 500;
     const status = err.status || "error";

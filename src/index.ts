@@ -13,6 +13,7 @@ const allowedOrigins = [
     "http://localhost:3000",
 ];
 
+// CORS middleware
 app.use(
     cors({
         origin: allowedOrigins,
@@ -21,17 +22,21 @@ app.use(
     })
 );
 
+// Security headers middleware
 app.use(securityHeaders);
 
+// Body parser middleware
 app.use(express.json());
 
 const port = process.env.PORT;
 const version = process.env.API_VERSION!;
 const baseUrl = `${process.env.BASE_URL!}/${version}`;
 
+// Authentication routes
 const authRouter = new AuthRouter();
 app.use(`${baseUrl}/auth`, authRouter.getRouter());
 
+// 404 route
 app.get("*", (req: Request, res: Response) => {
     res.status(404).json({
         success: false,
