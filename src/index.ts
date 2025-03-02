@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from "cors";
 import { ErrorMiddleware } from './middlewares/error.middleware';
 import AuthRouter from './api/auth/auth.routes';
+import { securityHeaders } from './middlewares/securityHeaders.middleware';
 
 dotenv.config();
 
@@ -19,6 +20,8 @@ app.use(
         allowedHeaders: ["Content-Type", "Authorization"],
     })
 );
+
+app.use(securityHeaders);
 
 app.use(express.json());
 
