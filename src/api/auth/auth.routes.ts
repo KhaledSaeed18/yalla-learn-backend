@@ -1,6 +1,6 @@
 import { Router } from "express";
 import AuthController from "./auth.controller";
-import { signinLimiter, signupLimiter } from "./auth.rateLimiting";
+import { loginHistoryLimiter, signinLimiter, signupLimiter } from "./auth.rateLimiting";
 import { validateSignin, validateSignup } from "./auth.validation";
 import { authorize } from "../../middlewares/authorization.middleware";
 
@@ -34,6 +34,7 @@ export default class AuthRouter {
     // Get user login history route
     this.router.get(
       "/login-history",
+      loginHistoryLimiter,
       authorize,
       this.authController.getLoginHistory
     );
