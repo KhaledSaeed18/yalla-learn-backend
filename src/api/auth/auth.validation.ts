@@ -24,7 +24,7 @@ const signupSchema = z.object({
         .refine(email => {
             const domain = email.split('@')[1];
             return !BLOCKED_DOMAINS.includes(domain.toLowerCase());
-        }, "This email domain is not allowed. Please use a company or education email"),
+        }, "This email domain is not allowed. Please use a different email address"),
 
     password: z.string()
         .min(8, "Password must be at least 8 characters long")
@@ -40,8 +40,7 @@ const signinSchema = z.object({
     email: z.string()
         .trim()
         .min(1, "Email is required")
-        .email("Please enter a valid email address")
-        .max(100, "Email cannot exceed 100 characters"),
+        .email("Please enter a valid email address"),
 
     password: z.string()
         .min(1, "Password is required")
