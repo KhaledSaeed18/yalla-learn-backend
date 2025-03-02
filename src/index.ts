@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import cors from "cors";
 import { ErrorMiddleware } from './middlewares/error.middleware';
+import AuthRouter from './api/auth/auth.routes';
 
 dotenv.config();
 
@@ -25,9 +26,8 @@ const port = process.env.PORT;
 const version = process.env.API_VERSION!;
 const baseUrl = `${process.env.BASE_URL!}/${version}`;
 
-app.get(`${baseUrl}/`, (req: Request, res: Response) => {
-    res.send('Hello, World!');
-});
+const authRouter = new AuthRouter();
+app.use(`${baseUrl}/auth`, authRouter.getRouter());
 
 app.get("*", (req: Request, res: Response) => {
     res.status(404).json({
