@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { generateAccessToken, generateRefreshToken } from "../../utils/generateTokens";
 import { Request } from "express";
+import jwt, { TokenExpiredError } from "jsonwebtoken";
 
 export class AuthService {
   private prisma: PrismaClient;
@@ -147,5 +148,23 @@ export class AuthService {
     });
 
     return loginHistory;
+  }
+
+  public async refreshAccessToken(refreshToken: string) {
+    try {
+      const decoded = jwt.verify(
+        refreshToken,
+        process.env.JWT_REFRESH_SECRET as string
+      ) as jwt.JwtPayload;
+
+      const newAccessToken = generateAccessToken(decoded.userId, decoded.role);
+
+      return newAccessToken;
+    } catch (error) {
+      if (error instanceof TokenExpiredError) {
+        throw new Error("Refresh token expired");
+      }
+      throw new Error("Error refreshing access token");
+    }
   }
 }

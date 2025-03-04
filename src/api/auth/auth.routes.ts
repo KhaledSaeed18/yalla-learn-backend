@@ -41,6 +41,13 @@ export default class AuthRouter {
       authorize,
       this.authController.getLoginHistory
     );
+
+    // Refresh token route
+    this.router.post(
+      "/refresh-token",
+      authorize,
+      this.authController.refreshAccessToken
+    );
   }
 
   // Returns the router object
