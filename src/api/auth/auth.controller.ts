@@ -10,6 +10,7 @@ export default class AuthController {
     this.signup = this.signup.bind(this);
     this.signin = this.signin.bind(this);
     this.getLoginHistory = this.getLoginHistory.bind(this);
+    this.refreshAccessToken = this.refreshAccessToken.bind(this);
   }
 
   // Signup controller
