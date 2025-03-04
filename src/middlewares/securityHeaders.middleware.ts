@@ -28,9 +28,6 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
     // HTTP Strict Transport Security
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
 
-    // Permissions Policy (formerly Feature-Policy)
-    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-
     // Cross-Origin policies
     res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
