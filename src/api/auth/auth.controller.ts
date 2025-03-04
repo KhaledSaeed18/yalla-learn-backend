@@ -74,15 +74,20 @@ export default class AuthController {
   async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
     try {
       const { refreshToken } = req.body;
+
       if (!refreshToken || refreshToken === "" || refreshToken === undefined) {
         return next(errorHandler(400, "Refresh Token is required"));
       }
+
       const result = await this.authService.refreshAccessToken(refreshToken);
+
       res.status(200).json({
         status: "success",
         statusCode: 200,
         message: "Access Token Refreshed Successfully",
-        data: result
+        data: {
+          accessToken: result,
+        }
       });
     } catch (err) {
       next(errorHandler(500, (err as Error).message || "Failed to refresh access token"));

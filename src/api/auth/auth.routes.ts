@@ -47,7 +47,6 @@ export default class AuthRouter {
       "/refresh-token",
       refreshTokenLimiter,
       validateRefreshToken,
-      authorize,
       this.authController.refreshAccessToken
     );
   }
