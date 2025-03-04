@@ -3,6 +3,7 @@ import AuthController from "./auth.controller";
 import { loginHistoryLimiter, signinLimiter, signupLimiter } from "./auth.rateLimiting";
 import { validateSignin, validateSignup } from "./auth.validation";
 import { authorize } from "../../middlewares/authorization.middleware";
+import { sanitizeRequestBody } from '../../middlewares/sanitizeBody.middleware';
 
 export default class AuthRouter {
   private router: Router;
@@ -19,6 +20,7 @@ export default class AuthRouter {
     this.router.post(
       "/signup",
       signupLimiter,
+      sanitizeRequestBody,
       validateSignup,
       this.authController.signup
     );
@@ -27,6 +29,7 @@ export default class AuthRouter {
     this.router.post(
       "/signin",
       signinLimiter,
+      sanitizeRequestBody,
       validateSignin,
       this.authController.signin
     );

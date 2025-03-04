@@ -22,7 +22,7 @@ app.use(
     })
 );
 
-// Security headers middleware
+// Security middlewares
 app.use(securityHeaders);
 
 // Body parser middleware
@@ -36,11 +36,12 @@ const baseUrl = `${process.env.BASE_URL!}/${version}`;
 const authRouter = new AuthRouter();
 app.use(`${baseUrl}/auth`, authRouter.getRouter());
 
-// 404 route
-app.get("*", (req: Request, res: Response) => {
+// 404 error handler
+app.use((_req: Request, res: Response) => {
     res.status(404).json({
-        success: false,
-        message: "Resource not found",
+        status: "fail",
+        statusCode: 404,
+        message: "Resource not found"
     });
 });
 

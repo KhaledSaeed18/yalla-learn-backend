@@ -5,7 +5,7 @@ import { errorHandler } from '../../utils/errorHandler';
 export const signupLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5,
-    handler: (req, res, next) => {
+    handler: (_req, _res, next) => {
         next(errorHandler(429, "Too many signup attempts, please try again later"));
     }
 });
@@ -14,7 +14,7 @@ export const signupLimiter = rateLimit({
 export const signinLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5,
-    handler: (req, res, next) => {
+    handler: (_req, _res, next) => {
         next(errorHandler(429, "Too many signin attempts, please try again later"));
     }
 });
@@ -23,7 +23,7 @@ export const signinLimiter = rateLimit({
 export const loginHistoryLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
-    handler: (req, res, next) => {
+    handler: (_req, _res, next) => {
         next(errorHandler(429, "Too many requests, please try again later"));
     }
 });
