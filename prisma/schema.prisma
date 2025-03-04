@@ -13,11 +13,17 @@ model User {
   lastName  String
   email     String @unique
   password  String
+  role      Role   @default(USER)
 
   LoginHistory LoginHistory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 model LoginHistory {

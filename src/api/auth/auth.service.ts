@@ -84,7 +84,8 @@ export class AuthService {
           id: newUser.id,
           firstName,
           lastName,
-          email
+          email,
+          role: newUser.role,
         },
       },
     };
@@ -116,15 +117,22 @@ export class AuthService {
     // Record successful login attempt for the user
     await this.recordLoginAttempt(user.id, req, true);
 
-    const accessToken = generateAccessToken(user.id);
-    const refreshToken = generateRefreshToken(user.id);
+    // Generate access and refresh tokens
+    const accessToken = generateAccessToken(user.id, user.role);
+    const refreshToken = generateRefreshToken(user.id, user.role);
 
     return {
       status: "success",
       statusCode: 200,
       message: "User signed in successfully",
       data: {
-        user: { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email },
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+        },
         accessToken,
         refreshToken,
       },

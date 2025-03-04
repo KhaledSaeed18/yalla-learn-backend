@@ -1,13 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload, TokenExpiredError } from 'jsonwebtoken';
 import { errorHandler } from '../utils/errorHandler';
+import { Role } from '@prisma/client';
 
 declare module 'express' {
     interface Request {
-        user?: JwtPayload;
+        user?: JwtPayload & { role?: Role };
     }
 }
 
+// Middleware to check authorization
 export const authorize = (req: Request, res: Response, next: NextFunction): void => {
     const authHeader = req.headers['authorization'];
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -27,4 +29,13 @@ export const authorize = (req: Request, res: Response, next: NextFunction): void
         }
         next(errorHandler(401, 'Unauthorized: Invalid token'));
     }
+};
+
+// Middleware to check for admin role
+export const authorizeAdmin = (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user || req.user.role !== 'ADMIN') {
+        return next(errorHandler(403, 'Access denied: Admin privileges required'));
+    }
+
+    next();
 };
