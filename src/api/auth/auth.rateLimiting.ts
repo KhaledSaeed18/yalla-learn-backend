@@ -19,8 +19,17 @@ export const signinLimiter = rateLimit({
     }
 });
 
-// Rate limiting for Login History API, 100 requests per 15 minutes
+// Rate limiting for Login History API, 50 requests per 15 minutes
 export const loginHistoryLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 50,
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many requests, please try again later"));
+    }
+});
+
+// Rate limiting for Refresh Token API, 50 requests per 15 minutes
+export const refreshTokenLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 50,
     handler: (_req, _res, next) => {

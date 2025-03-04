@@ -1,7 +1,7 @@
 import { Router } from "express";
 import AuthController from "./auth.controller";
-import { loginHistoryLimiter, signinLimiter, signupLimiter } from "./auth.rateLimiting";
-import { validateSignin, validateSignup } from "./auth.validation";
+import { loginHistoryLimiter, refreshTokenLimiter, signinLimiter, signupLimiter } from "./auth.rateLimiting";
+import { validateRefreshToken, validateSignin, validateSignup } from "./auth.validation";
 import { authorize } from "../../middlewares/authorization.middleware";
 import { sanitizeRequestBody } from '../../middlewares/sanitizeBody.middleware';
 
@@ -45,6 +45,8 @@ export default class AuthRouter {
     // Refresh token route
     this.router.post(
       "/refresh-token",
+      refreshTokenLimiter,
+      validateRefreshToken,
       authorize,
       this.authController.refreshAccessToken
     );

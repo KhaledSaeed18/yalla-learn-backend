@@ -150,6 +150,7 @@ export class AuthService {
     return loginHistory;
   }
 
+  // Refresh access token method
   public async refreshAccessToken(refreshToken: string) {
     try {
       const decoded = jwt.verify(

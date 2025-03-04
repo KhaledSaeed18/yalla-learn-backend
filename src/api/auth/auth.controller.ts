@@ -69,6 +69,7 @@ export default class AuthController {
     }
   }
 
+  // Refresh access token controller
   async refreshAccessToken(req: Request, res: Response, next: NextFunction) {
     try {
       const { refreshToken } = req.body;

@@ -50,6 +50,12 @@ const signinSchema = z.object({
         .max(64, "Password exceeds maximum length")
 });
 
+// Refresh token schema
+const refreshTokenSchema = z.object({
+    refreshToken: z.string()
+        .min(1, "Refresh token is required")
+});
+
 // Validation middleware
 const validate = (schema: z.ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -71,3 +77,4 @@ const validate = (schema: z.ZodSchema) => (req: Request, res: Response, next: Ne
 
 export const validateSignup = validate(signupSchema);
 export const validateSignin = validate(signinSchema);
+export const validateRefreshToken = validate(refreshTokenSchema);
