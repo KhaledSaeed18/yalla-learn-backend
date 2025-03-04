@@ -22,7 +22,7 @@ app.use(
     })
 );
 
-// Security middlewares
+// Security middleware
 app.use(securityHeaders);
 
 // Body parser middleware
@@ -45,6 +45,7 @@ app.use((_req: Request, res: Response) => {
     });
 });
 
+// Error handling middleware
 app.use(ErrorMiddleware.handleError);
 
 app.listen(port, () => {

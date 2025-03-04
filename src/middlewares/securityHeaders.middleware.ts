@@ -14,7 +14,7 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
     // Prevent clickjacking
     res.setHeader('X-Frame-Options', 'DENY');
 
-    // Content Security Policy - more restrictive
+    // Content Security Policy
     res.setHeader('Content-Security-Policy',
         "default-src 'self'; " +
         "script-src 'self'; " +
