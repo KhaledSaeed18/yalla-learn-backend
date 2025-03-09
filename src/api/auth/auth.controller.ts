@@ -15,6 +15,10 @@ export default class AuthController {
     this.resendVerificationCode = this.resendVerificationCode.bind(this);
     this.forgotPassword = this.forgotPassword.bind(this);
     this.resetPassword = this.resetPassword.bind(this);
+    this.setup2FA = this.setup2FA.bind(this);
+    this.verify2FA = this.verify2FA.bind(this);
+    this.signin2FA = this.signin2FA.bind(this);
+    this.disable2FA = this.disable2FA.bind(this);
   }
 
   // Signup controller
@@ -222,6 +226,143 @@ export default class AuthController {
         return;
       }
       next(errorHandler(500, "Password reset failed"));
+    }
+  }
+
+  // Setup 2FA controller
+  async setup2FA(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      console.log(req.user);
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        next(errorHandler(400, "User ID is required"));
+        return;
+      }
+
+      const result = await this.authService.setup2FA(userId);
+
+      res.status(200).json(result);
+    } catch (err) {
+      const message = (err as Error).message;
+      if (message === "User not found") {
+        next(errorHandler(404, "User not found"));
+        return;
+      }
+      if (message === "2FA is already enabled for this account") {
+        next(errorHandler(400, "2FA is already enabled for this account"));
+        return;
+      }
+      next(errorHandler(500, "Failed to setup 2FA"));
+    }
+  }
+
+  // Verify and enable 2FA controller
+  async verify2FA(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { token } = req.body;
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        next(errorHandler(400, "User ID is required"));
+        return;
+      }
+
+      if (!token) {
+        next(errorHandler(400, "Token is required"));
+        return;
+      }
+
+      const result = await this.authService.verify2FA(userId, token);
+
+      res.status(200).json(result);
+    } catch (err) {
+      const message = (err as Error).message;
+      if (message === "User not found") {
+        next(errorHandler(404, "User not found"));
+        return;
+      }
+      if (message === "2FA is already enabled") {
+        next(errorHandler(400, "2FA is already enabled"));
+        return;
+      }
+      if (message === "2FA setup not initiated") {
+        next(errorHandler(400, "2FA setup not initiated"));
+        return;
+      }
+      if (message === "Invalid 2FA token") {
+        next(errorHandler(400, "Invalid 2FA token"));
+        return;
+      }
+      next(errorHandler(500, "Failed to verify 2FA token"));
+    }
+  }
+
+  // 2FA login (second step after password verification)
+  async signin2FA(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { email, password, token } = req.body;
+
+      if (!email || !password || !token) {
+        next(errorHandler(400, "Email, password, and 2FA token are required"));
+        return;
+      }
+
+      const result = await this.authService.signin2FA(email, password, token, req);
+
+      res.status(200).json(result);
+    } catch (err) {
+      const message = (err as Error).message;
+      if (message === "Invalid email or password") {
+        next(errorHandler(401, "Invalid email or password"));
+        return;
+      }
+      if (message === "Account not verified. Please verify your email address.") {
+        next(errorHandler(403, "Account not verified. Please verify your email address."));
+        return;
+      }
+      if (message === "Invalid 2FA token") {
+        next(errorHandler(401, "Invalid 2FA token"));
+        return;
+      }
+      next(errorHandler(500, "Login failed"));
+    }
+  }
+
+  // Disable 2FA controller
+  async disable2FA(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { token } = req.body;
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        next(errorHandler(400, "User ID is required"));
+        return;
+      }
+
+      if (!token) {
+        next(errorHandler(400, "Token is required"));
+        return;
+      }
+
+      const result = await this.authService.disable2FA(userId, token);
+
+      res.status(200).json(result);
+    } catch (err) {
+      const message = (err as Error).message;
+      if (message === "User not found") {
+        next(errorHandler(404, "User not found"));
+        return;
+      }
+      if (message === "2FA is not enabled for this account") {
+        next(errorHandler(400, "2FA is not enabled for this account"));
+        return;
+      }
+      if (message === "Invalid 2FA token") {
+        next(errorHandler(400, "Invalid 2FA token"));
+        return;
+      }
+      next(errorHandler(500, "Failed to disable 2FA"));
     }
   }
 }

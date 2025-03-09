@@ -72,3 +72,39 @@ export const resetPasswordLimiter = rateLimit({
         next(errorHandler(429, "Too many reset password attempts, please try again later"));
     }
 });
+
+// Rate limiting for 2FA login attempts, 5 attempts per 15 minutes
+export const signin2FALimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many 2FA login attempts, please try again later"));
+    }
+});
+
+// Rate limiting for 2FA setup, 3 attempts per 15 minutes
+export const setup2FALimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 3,
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many 2FA setup attempts, please try again later"));
+    }
+});
+
+// Rate limiting for 2FA verification attempts, 5 attempts per 15 minutes
+export const verify2FALimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many 2FA verification attempts, please try again later"));
+    }
+});
+
+// Rate limiting for 2FA disable attempts, 3 attempts per 15 minutes
+export const disable2FALimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 3,
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many 2FA disable attempts, please try again later"));
+    }
+});

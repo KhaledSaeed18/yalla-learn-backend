@@ -5,6 +5,7 @@ import { Request } from "express";
 import jwt, { TokenExpiredError } from "jsonwebtoken";
 import { generateOTP } from "../../utils/generateOTP";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../../mails/email";
+import { generateQRCode, generateTOTPSecret, verifyTOTP } from "../../utils/totp";
 
 export class AuthService {
   private prisma: PrismaClient;
@@ -132,7 +133,6 @@ export class AuthService {
         select: { id: true }
       });
 
-      // Record failed login attempt for the existing email
       if (existingEmail) {
         await this.recordLoginAttempt(existingEmail.id, req, false);
       }
@@ -151,10 +151,28 @@ export class AuthService {
       throw new Error("Account not verified. Please verify your email address.");
     }
 
-    // Record successful login attempt for the user
+    // Check if 2FA is enabled
+    if (user.totpEnabled) {
+      // Return a special response indicating 2FA is required
+      return {
+        status: "pending",
+        statusCode: 200,
+        message: "2FA verification required",
+        data: {
+          requiresOtp: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName
+          }
+        }
+      };
+    }
+
+    // Regular flow for users without 2FA
     await this.recordLoginAttempt(user.id, req, true);
 
-    // Generate access and refresh tokens
     const accessToken = generateAccessToken(user.id, user.role);
     const refreshToken = generateRefreshToken(user.id, user.role);
 
@@ -169,7 +187,8 @@ export class AuthService {
           lastName: user.lastName,
           email: user.email,
           role: user.role,
-          isVerified: user.isVerified
+          isVerified: user.isVerified,
+          totpEnabled: user.totpEnabled
         },
         accessToken,
         refreshToken,
@@ -369,6 +388,189 @@ export class AuthService {
       status: "success",
       statusCode: 200,
       message: "Password reset successful"
+    };
+  }
+
+  // Setup 2FA for a user - generates secret and QR code
+  public async setup2FA(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.totpEnabled) {
+      throw new Error("2FA is already enabled for this account");
+    }
+
+    // Generate TOTP secret
+    const { secret, otpauth_url } = generateTOTPSecret(user.email);
+
+    // Generate QR code
+    const qrCode = await generateQRCode(otpauth_url);
+
+    // Store the secret temporarily (it will be confirmed before enabling)
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        totpSecret: secret,
+        // Not enabled yet until verified with a token
+        totpEnabled: false
+      }
+    });
+
+    return {
+      status: "success",
+      statusCode: 200,
+      message: "2FA setup initiated",
+      data: {
+        secret: secret, // User should store this as backup
+        qrCode: qrCode
+      }
+    };
+  }
+
+  // Verify and enable 2FA
+  public async verify2FA(userId: string, token: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.totpEnabled) {
+      throw new Error("2FA is already enabled");
+    }
+
+    if (!user.totpSecret) {
+      throw new Error("2FA setup not initiated");
+    }
+
+    // Verify token with stored secret
+    const isValid = verifyTOTP(token, user.totpSecret);
+
+    if (!isValid) {
+      throw new Error("Invalid 2FA token");
+    }
+
+    // Enable 2FA for the user
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        totpEnabled: true
+      }
+    });
+
+    return {
+      status: "success",
+      statusCode: 200,
+      message: "2FA enabled successfully"
+    };
+  }
+
+  // Signin with 2FA
+  public async signin2FA(email: string, password: string, token: string, req: Request) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new Error("Invalid email or password");
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      await this.recordLoginAttempt(user.id, req, false);
+      throw new Error("Invalid email or password");
+    }
+
+    // Check if user is verified
+    if (!user.isVerified) {
+      throw new Error("Account not verified. Please verify your email address.");
+    }
+
+    // Verify 2FA token if 2FA is enabled
+    if (user.totpEnabled) {
+      if (!token) {
+        throw new Error("2FA token required");
+      }
+
+      if (!user.totpSecret) {
+        throw new Error("2FA not properly configured");
+      }
+
+      const isValid = verifyTOTP(token, user.totpSecret);
+      if (!isValid) {
+        await this.recordLoginAttempt(user.id, req, false);
+        throw new Error("Invalid 2FA token");
+      }
+    }
+
+    // Record successful login attempt
+    await this.recordLoginAttempt(user.id, req, true);
+
+    // Generate access and refresh tokens
+    const accessToken = generateAccessToken(user.id, user.role);
+    const refreshToken = generateRefreshToken(user.id, user.role);
+
+    return {
+      status: "success",
+      statusCode: 200,
+      message: "User signed in successfully",
+      data: {
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+          isVerified: user.isVerified,
+          totpEnabled: user.totpEnabled
+        },
+        accessToken,
+        refreshToken,
+      },
+    };
+  }
+
+  // Disable 2FA
+  public async disable2FA(userId: string, token: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (!user.totpEnabled) {
+      throw new Error("2FA is not enabled for this account");
+    }
+
+    if (!user.totpSecret) {
+      throw new Error("2FA not properly configured");
+    }
+
+    // Verify token before disabling
+    const isValid = verifyTOTP(token, user.totpSecret);
+    if (!isValid) {
+      throw new Error("Invalid 2FA token");
+    }
+
+    // Disable 2FA
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        totpSecret: null,
+        totpEnabled: false
+      }
+    });
+
+    return {
+      status: "success",
+      statusCode: 200,
+      message: "2FA disabled successfully"
     };
   }
 }

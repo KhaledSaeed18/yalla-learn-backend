@@ -1,7 +1,7 @@
 import { Router } from "express";
 import AuthController from "./auth.controller";
-import { loginHistoryLimiter, refreshTokenLimiter, signinLimiter, signupLimiter, verifyEmailLimiter, resendVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter } from "./auth.rateLimiting";
-import { validateForgotPassword, validateRefreshToken, validateResendVerification, validateResetPassword, validateSignin, validateSignup, validateVerifyEmail } from "./auth.validation";
+import { loginHistoryLimiter, refreshTokenLimiter, signinLimiter, signupLimiter, verifyEmailLimiter, resendVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter, setup2FALimiter, verify2FALimiter, signin2FALimiter, disable2FALimiter } from "./auth.rateLimiting";
+import { validateDisable2FA, validateForgotPassword, validateLogin2FA, validateRefreshToken, validateResendVerification, validateResetPassword, validateSignin, validateSignup, validateVerify2FA, validateVerifyEmail } from "./auth.validation";
 import { authorize } from "../../middlewares/authorization.middleware";
 import { sanitizeRequestBody } from '../../middlewares/sanitizeBody.middleware';
 
@@ -84,6 +84,43 @@ export default class AuthRouter {
       sanitizeRequestBody,
       validateResetPassword,
       this.authController.resetPassword
+    );
+
+    // Setup 2FA (get QR code)
+    this.router.post(
+      "/2fa/setup",
+      authorize,
+      setup2FALimiter,
+      this.authController.setup2FA
+    );
+
+    // Verify and enable 2FA
+    this.router.post(
+      "/2fa/verify",
+      authorize,
+      verify2FALimiter,
+      sanitizeRequestBody,
+      validateVerify2FA,
+      this.authController.verify2FA
+    );
+
+    // 2FA login (second step)
+    this.router.post(
+      "/2fa/signin",
+      signin2FALimiter,
+      sanitizeRequestBody,
+      validateLogin2FA,
+      this.authController.signin2FA
+    );
+
+    // Disable 2FA
+    this.router.post(
+      "/2fa/disable",
+      authorize,
+      disable2FALimiter,
+      sanitizeRequestBody,
+      validateDisable2FA,
+      this.authController.disable2FA
     );
   }
 

@@ -106,6 +106,40 @@ const resetPasswordSchema = z.object({
         )
 });
 
+// Setup 2FA schema
+const setup2FASchema = z.object({
+    userId: z.string().trim().min(1, "User ID is required"),
+});
+
+// Verify & Enable 2FA schema
+const verify2FASchema = z.object({
+    token: z.string()
+        .trim()
+        .min(6, "Token must be at least 6 characters")
+        .max(6, "Token must be at most 6 characters")
+        .regex(/^\d+$/, "Token must contain only digits"),
+});
+
+// Validate 2FA token schema (for login)
+const validate2FASchema = z.object({
+    email: z.string().trim().email("Invalid email format"),
+    token: z.string()
+        .trim()
+        .min(6, "Token must be at least 6 characters")
+        .max(6, "Token must be at most 6 characters")
+        .regex(/^\d+$/, "Token must contain only digits"),
+    password: z.string().min(1, "Password is required"),
+});
+
+// Disable 2FA schema
+const disable2FASchema = z.object({
+    token: z.string()
+        .trim()
+        .min(6, "Token must be at least 6 characters")
+        .max(6, "Token must be at most 6 characters")
+        .regex(/^\d+$/, "Token must contain only digits"),
+});
+
 // Validation middleware
 const validate = (schema: z.ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -132,3 +166,7 @@ export const validateVerifyEmail = validate(verifyEmailSchema);
 export const validateResendVerification = validate(resendVerificationSchema);
 export const validateForgotPassword = validate(forgotPasswordSchema);
 export const validateResetPassword = validate(resetPasswordSchema);
+export const validateSetup2FA = validate(setup2FASchema);
+export const validateVerify2FA = validate(verify2FASchema);
+export const validateLogin2FA = validate(validate2FASchema);
+export const validateDisable2FA = validate(disable2FASchema);

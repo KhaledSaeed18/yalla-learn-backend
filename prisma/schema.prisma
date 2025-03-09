@@ -20,6 +20,9 @@ model User {
   resetPasswordCode String?
   resetPasswordExpiry DateTime?
 
+  totpSecret String?
+  totpEnabled Boolean @default(false)
+
   LoginHistory LoginHistory[]
 
   createdAt DateTime @default(now())
