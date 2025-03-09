@@ -1,3 +1,4 @@
+// Block common disposable email domains
 export const BLOCKED_DOMAINS = [
     'test.com',
     'example.com',
@@ -19,6 +20,7 @@ export const BLOCKED_DOMAINS = [
     'maildrop.cc'
 ];
 
+// Commonly used passwords should be avoided
 export const COMMON_PASSWORDS = [
     'Password123!',
     'Admin123!',

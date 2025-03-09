@@ -1,10 +1,20 @@
 import crypto from 'crypto';
 
-// Generate a random 6-digit OTP
+// Generates secure 6-digit OTP
 export const generateOTP = (): string => {
-    const randomBytes = crypto.randomBytes(3);
-    const randomNumber = parseInt(randomBytes.toString('hex'), 16);
-    const sixDigits = randomNumber % 1000000;
+    const max = 1000000;
+
+    let randomNumber;
+    const rangeSize = Math.pow(2, 32);
+    const blockCount = Math.floor(rangeSize / max);
+    const limit = blockCount * max;
+
+    do {
+        const randomBytes = crypto.randomBytes(4);
+        randomNumber = randomBytes.readUInt32BE(0);
+    } while (randomNumber >= limit);
+
+    const sixDigits = randomNumber % max;
+
     return sixDigits.toString().padStart(6, '0');
 };
-

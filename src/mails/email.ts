@@ -1,7 +1,7 @@
 import { VERIFICATION_EMAIL_TEMPLATE } from "../constants/emailTemplates";
 import createTransporter from "./nodemailer.config";
 
-
+// Send verification email
 export const sendVerificationEmail = async (email: string, otpCode: string, name: string) => {
     const recipient = [{ email }];
 
