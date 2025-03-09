@@ -17,6 +17,8 @@ model User {
   verificationCode String?
   codeExpiry DateTime?
   isVerified Boolean @default(false)
+  resetPasswordCode String?
+  resetPasswordExpiry DateTime?
 
   LoginHistory LoginHistory[]
 

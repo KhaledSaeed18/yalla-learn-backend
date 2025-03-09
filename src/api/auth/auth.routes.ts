@@ -1,7 +1,7 @@
 import { Router } from "express";
 import AuthController from "./auth.controller";
-import { loginHistoryLimiter, refreshTokenLimiter, signinLimiter, signupLimiter, verifyEmailLimiter, resendVerificationLimiter } from "./auth.rateLimiting";
-import { validateRefreshToken, validateResendVerification, validateSignin, validateSignup, validateVerifyEmail } from "./auth.validation";
+import { loginHistoryLimiter, refreshTokenLimiter, signinLimiter, signupLimiter, verifyEmailLimiter, resendVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter } from "./auth.rateLimiting";
+import { validateForgotPassword, validateRefreshToken, validateResendVerification, validateResetPassword, validateSignin, validateSignup, validateVerifyEmail } from "./auth.validation";
 import { authorize } from "../../middlewares/authorization.middleware";
 import { sanitizeRequestBody } from '../../middlewares/sanitizeBody.middleware';
 
@@ -66,6 +66,24 @@ export default class AuthRouter {
       sanitizeRequestBody,
       validateResendVerification,
       this.authController.resendVerificationCode
+    );
+
+    // Forgot password route
+    this.router.post(
+      "/forgot-password",
+      forgotPasswordLimiter,
+      sanitizeRequestBody,
+      validateForgotPassword,
+      this.authController.forgotPassword
+    );
+
+    // Reset password route
+    this.router.post(
+      "/reset-password",
+      resetPasswordLimiter,
+      sanitizeRequestBody,
+      validateResetPassword,
+      this.authController.resetPassword
     );
   }
 

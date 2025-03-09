@@ -4,7 +4,7 @@ import { generateAccessToken, generateRefreshToken } from "../../utils/generateT
 import { Request } from "express";
 import jwt, { TokenExpiredError } from "jsonwebtoken";
 import { generateOTP } from "../../utils/generateOTP";
-import { sendVerificationEmail } from "../../mails/email";
+import { sendPasswordResetEmail, sendVerificationEmail } from "../../mails/email";
 
 export class AuthService {
   private prisma: PrismaClient;
@@ -296,6 +296,79 @@ export class AuthService {
       status: "success",
       statusCode: 200,
       message: "Verification code resent successfully"
+    };
+  }
+
+  // Forgot password method
+  public async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Generate reset token and set expiry time
+    const resetPasswordCode = generateOTP();
+    const resetPasswordExpiry = this.generateCodeExpiry();
+
+    // Update user with reset token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordCode,
+        resetPasswordExpiry
+      }
+    });
+
+    // Send password reset email
+    await sendPasswordResetEmail(
+      email,
+      resetPasswordCode,
+      user.firstName
+    );
+
+    return {
+      status: "success",
+      statusCode: 200,
+      message: "Password reset instructions sent to your email"
+    };
+  }
+
+  // Reset password method
+  public async resetPassword(email: string, code: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (!user.resetPasswordCode || !user.resetPasswordExpiry) {
+      throw new Error("Reset token not found or expired");
+    }
+
+    if (user.resetPasswordCode !== code) {
+      throw new Error("Invalid reset code");
+    }
+
+    if (new Date() > user.resetPasswordExpiry) {
+      throw new Error("Reset code has expired");
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, this.saltRounds);
+
+    // Update user password and clear reset token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetPasswordCode: null,
+        resetPasswordExpiry: null
+      }
+    });
+
+    return {
+      status: "success",
+      statusCode: 200,
+      message: "Password reset successful"
     };
   }
 }

@@ -75,6 +75,37 @@ const resendVerificationSchema = z.object({
         .email("Invalid email format")
 });
 
+// Forgot password schema
+const forgotPasswordSchema = z.object({
+    email: z.string()
+        .trim()
+        .email("Invalid email format")
+});
+
+// Reset password schema
+const resetPasswordSchema = z.object({
+    email: z.string()
+        .trim()
+        .email("Invalid email format"),
+
+    code: z.string()
+        .trim()
+        .length(6, "Reset code must be 6 digits")
+        .regex(/^\d{6}$/, "Reset code must contain only digits"),
+
+    newPassword: z.string()
+        .min(8, "New password must be at least 8 characters long")
+        .max(64, "New password cannot exceed 64 characters")
+        .regex(/[a-z]/, "New password must contain at least one lowercase letter")
+        .regex(/[A-Z]/, "New password must contain at least one uppercase letter")
+        .regex(/[0-9]/, "New password must contain at least one number")
+        .regex(/[^a-zA-Z0-9]/, "New password must contain at least one special character")
+        .refine(
+            (password) => !COMMON_PASSWORDS.includes(password),
+            "This password is too common. Please choose a more unique password."
+        )
+});
+
 // Validation middleware
 const validate = (schema: z.ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -99,3 +130,5 @@ export const validateSignin = validate(signinSchema);
 export const validateRefreshToken = validate(refreshTokenSchema);
 export const validateVerifyEmail = validate(verifyEmailSchema);
 export const validateResendVerification = validate(resendVerificationSchema);
+export const validateForgotPassword = validate(forgotPasswordSchema);
+export const validateResetPassword = validate(resetPasswordSchema);
