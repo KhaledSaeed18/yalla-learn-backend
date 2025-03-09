@@ -48,6 +48,9 @@ export default class AuthController {
       if ((err as Error).message === "Invalid email or password") {
         return next(errorHandler(401, "Invalid email or password"));
       }
+      if ((err as Error).message === "Account not verified. Please verify your email address.") {
+        return next(errorHandler(403, "Account not verified. Please verify your email address."));
+      }
       next(errorHandler(500, (err as Error).message || "Signin failed, Please try again"));
     }
   }
