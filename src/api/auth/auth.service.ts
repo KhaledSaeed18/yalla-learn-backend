@@ -14,6 +14,11 @@ export class AuthService {
     this.prisma = new PrismaClient();
   }
 
+  // Helper method to generate code expiry
+  private generateCodeExpiry(): Date {
+    return new Date(Date.now() + 15 * 60 * 1000);
+  }
+
   // Helper method to extract device info from request
   private extractDeviceInfo(req: Request): {
     ipAddress: string | null;
@@ -74,9 +79,9 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, this.saltRounds);
 
-    // Generate OTP and set 15 minutes expiry
+    // Generate OTP and set expiry time
     const verificationCode = generateOTP();
-    const codeExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    const codeExpiry = this.generateCodeExpiry();
 
     try {
       await sendVerificationEmail(
@@ -267,9 +272,9 @@ export class AuthService {
       throw new Error("Email already verified");
     }
 
-    // Generate new OTP and set expiry (15 minutes from now)
+    // Generate OTP and set expiry time
     const verificationCode = generateOTP();
-    const codeExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    const codeExpiry = this.generateCodeExpiry();
 
     // Update user with new verification code
     await this.prisma.user.update({
