@@ -11,12 +11,6 @@ export const VERIFICATION_EMAIL_TEMPLATE = `
 </head>
 <body
     style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5;">
-    <div style="display: none; max-height: 0px; overflow: hidden;">
-        Complete your account verification with this code
-    </div>
-    <div style="display: none; max-height: 0px; overflow: hidden;">
-        &nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;
-    </div>
     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto;">
         <tr>
             <td align="center" style="padding: 20px;">
@@ -139,12 +133,6 @@ export const PASSWORD_RESET_EMAIL_TEMPLATE = `
 
 <body
     style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5;">
-    <div style="display: none; max-height: 0px; overflow: hidden;">
-        Reset your password with this code
-    </div>
-    <div style="display: none; max-height: 0px; overflow: hidden;">
-        &nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;‌&nbsp;
-    </div>
     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto;">
         <tr>
             <td align="center" style="padding: 20px;">

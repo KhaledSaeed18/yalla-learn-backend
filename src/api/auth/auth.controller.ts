@@ -183,12 +183,7 @@ export default class AuthController {
     } catch (err) {
       const message = (err as Error).message;
       if (message === "User not found") {
-        // For security reasons, don't reveal whether a user exists or not
-        res.status(200).json({
-          status: "success",
-          statusCode: 200,
-          message: "If your email is registered, you will receive password reset instructions"
-        });
+        next(errorHandler(404, "User not found"));
         return;
       }
       next(errorHandler(500, "Failed to process forgot password request"));
