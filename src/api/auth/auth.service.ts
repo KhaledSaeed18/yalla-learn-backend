@@ -341,7 +341,7 @@ export class AuthService {
     }
 
     if (!user.resetPasswordCode || !user.resetPasswordExpiry) {
-      throw new Error("Reset token not found or expired");
+      throw new Error("Reset code not found or expired");
     }
 
     if (user.resetPasswordCode !== code) {

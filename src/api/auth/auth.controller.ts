@@ -209,7 +209,7 @@ export default class AuthController {
         next(errorHandler(404, "User not found"));
         return;
       }
-      if (message === "Reset token not found or expired") {
+      if (message === "Reset code not found or expired") {
         next(errorHandler(400, "No active reset request found"));
         return;
       }
