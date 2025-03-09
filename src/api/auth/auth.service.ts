@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import { generateAccessToken, generateRefreshToken } from "../../utils/generateTokens";
 import { Request } from "express";
 import jwt, { TokenExpiredError } from "jsonwebtoken";
+import { generateOTP } from "../../utils/generateOTP";
+import { sendVerificationEmail } from "../../mails/email";
 
 export class AuthService {
   private prisma: PrismaClient;
@@ -72,8 +74,31 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, this.saltRounds);
 
+    // Generate OTP and set 15 minutes expiry
+    const verificationCode = generateOTP();
+    const codeExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+    try {
+      await sendVerificationEmail(
+        email,
+        verificationCode,
+        firstName
+      );
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Error sending verification email: ${errorMessage}`);
+    }
+
     const newUser = await this.prisma.user.create({
-      data: { firstName, lastName, email, password: hashedPassword },
+      data: {
+        firstName,
+        lastName,
+        email,
+        password: hashedPassword,
+        verificationCode,
+        codeExpiry,
+        isVerified: false
+      },
     });
 
     return {
@@ -87,6 +112,7 @@ export class AuthService {
           lastName,
           email,
           role: newUser.role,
+          isVerified: newUser.isVerified
         },
       },
     };
@@ -115,6 +141,11 @@ export class AuthService {
       throw new Error("Invalid email or password");
     }
 
+    // Check if user is verified
+    if (!user.isVerified) {
+      throw new Error("Account not verified. Please verify your email address.");
+    }
+
     // Record successful login attempt for the user
     await this.recordLoginAttempt(user.id, req, true);
 
@@ -133,6 +164,7 @@ export class AuthService {
           lastName: user.lastName,
           email: user.email,
           role: user.role,
+          isVerified: user.isVerified
         },
         accessToken,
         refreshToken,
@@ -167,5 +199,98 @@ export class AuthService {
       }
       throw new Error("Error refreshing access token");
     }
+  }
+
+  // Verify email with OTP
+  public async verifyEmail(email: string, code: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.isVerified) {
+      throw new Error("Email already verified");
+    }
+
+    if (!user.verificationCode || !user.codeExpiry) {
+      throw new Error("Verification code not found or expired");
+    }
+
+    if (user.verificationCode !== code) {
+      throw new Error("Invalid verification code");
+    }
+
+    if (new Date() > user.codeExpiry) {
+      throw new Error("Verification code has expired");
+    }
+
+    // Update user verification status (make isVerified = true)
+    const verifiedUser = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        verificationCode: null,
+        codeExpiry: null
+      }
+    });
+
+    return {
+      status: "success",
+      statusCode: 200,
+      message: "Email verified successfully",
+      data: {
+        user: {
+          id: verifiedUser.id,
+          firstName: verifiedUser.firstName,
+          lastName: verifiedUser.lastName,
+          email: verifiedUser.email,
+          isVerified: verifiedUser.isVerified
+        }
+      }
+    };
+  }
+
+  // Resend verification code
+  public async resendVerificationCode(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.isVerified) {
+      throw new Error("Email already verified");
+    }
+
+    // Generate new OTP and set expiry (15 minutes from now)
+    const verificationCode = generateOTP();
+    const codeExpiry = new Date(Date.now() + 15 * 60 * 1000);
+
+    // Update user with new verification code
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        verificationCode,
+        codeExpiry
+      }
+    });
+
+    // Send verification email
+    await sendVerificationEmail(
+      email,
+      verificationCode,
+      user.firstName
+    );
+
+    return {
+      status: "success",
+      statusCode: 200,
+      message: "Verification code resent successfully"
+    };
   }
 }

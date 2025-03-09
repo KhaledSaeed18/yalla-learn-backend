@@ -1,7 +1,7 @@
 import { Router } from "express";
 import AuthController from "./auth.controller";
-import { loginHistoryLimiter, refreshTokenLimiter, signinLimiter, signupLimiter } from "./auth.rateLimiting";
-import { validateRefreshToken, validateSignin, validateSignup } from "./auth.validation";
+import { loginHistoryLimiter, refreshTokenLimiter, signinLimiter, signupLimiter, verifyEmailLimiter, resendVerificationLimiter } from "./auth.rateLimiting";
+import { validateRefreshToken, validateResendVerification, validateSignin, validateSignup, validateVerifyEmail } from "./auth.validation";
 import { authorize } from "../../middlewares/authorization.middleware";
 import { sanitizeRequestBody } from '../../middlewares/sanitizeBody.middleware';
 
@@ -48,6 +48,24 @@ export default class AuthRouter {
       refreshTokenLimiter,
       validateRefreshToken,
       this.authController.refreshAccessToken
+    );
+
+    // Email verification route
+    this.router.post(
+      "/verify-email",
+      verifyEmailLimiter,
+      sanitizeRequestBody,
+      validateVerifyEmail,
+      this.authController.verifyEmail
+    );
+
+    // Resend verification code route
+    this.router.post(
+      "/resend-verification",
+      resendVerificationLimiter,
+      sanitizeRequestBody,
+      validateResendVerification,
+      this.authController.resendVerificationCode
     );
   }
 

@@ -56,6 +56,25 @@ const refreshTokenSchema = z.object({
         .min(1, "Refresh token is required")
 });
 
+// Email verification schema
+const verifyEmailSchema = z.object({
+    email: z.string()
+        .trim()
+        .email("Invalid email format"),
+
+    code: z.string()
+        .trim()
+        .length(6, "Verification code must be 6 digits")
+        .regex(/^\d{6}$/, "Verification code must contain only digits")
+});
+
+// Resend verification schema
+const resendVerificationSchema = z.object({
+    email: z.string()
+        .trim()
+        .email("Invalid email format")
+});
+
 // Validation middleware
 const validate = (schema: z.ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -78,3 +97,5 @@ const validate = (schema: z.ZodSchema) => (req: Request, res: Response, next: Ne
 export const validateSignup = validate(signupSchema);
 export const validateSignin = validate(signinSchema);
 export const validateRefreshToken = validate(refreshTokenSchema);
+export const validateVerifyEmail = validate(verifyEmailSchema);
+export const validateResendVerification = validate(resendVerificationSchema);

@@ -11,6 +11,8 @@ export default class AuthController {
     this.signin = this.signin.bind(this);
     this.getLoginHistory = this.getLoginHistory.bind(this);
     this.refreshAccessToken = this.refreshAccessToken.bind(this);
+    this.verifyEmail = this.verifyEmail.bind(this);
+    this.resendVerificationCode = this.resendVerificationCode.bind(this);
   }
 
   // Signup controller
@@ -91,6 +93,60 @@ export default class AuthController {
       });
     } catch (err) {
       next(errorHandler(500, (err as Error).message || "Failed to refresh access token"));
+    }
+  }
+
+  // Verify email controller
+  async verifyEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, code } = req.body;
+
+      if (!email || !code) {
+        return next(errorHandler(400, "Email and verification code are required"));
+      }
+
+      const result = await this.authService.verifyEmail(email, code);
+
+      res.status(200).json(result);
+    } catch (err) {
+      const message = (err as Error).message;
+      if (message === "User not found") {
+        return next(errorHandler(404, "User not found"));
+      }
+      if (message === "Email already verified") {
+        return next(errorHandler(400, "Email already verified"));
+      }
+      if (message === "Invalid verification code") {
+        return next(errorHandler(400, "Invalid verification code"));
+      }
+      if (message === "Verification code has expired") {
+        return next(errorHandler(400, "Verification code has expired"));
+      }
+      next(errorHandler(500, "Email verification failed"));
+    }
+  }
+
+  // Resend verification code controller
+  async resendVerificationCode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return next(errorHandler(400, "Email is required"));
+      }
+
+      const result = await this.authService.resendVerificationCode(email);
+
+      res.status(200).json(result);
+    } catch (err) {
+      const message = (err as Error).message;
+      if (message === "User not found") {
+        return next(errorHandler(404, "User not found"));
+      }
+      if (message === "Email already verified") {
+        return next(errorHandler(400, "Email already verified"));
+      }
+      next(errorHandler(500, "Failed to resend verification code"));
     }
   }
 }

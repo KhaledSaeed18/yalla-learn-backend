@@ -36,3 +36,21 @@ export const refreshTokenLimiter = rateLimit({
         next(errorHandler(429, "Too many requests, please try again later"));
     }
 });
+
+// Rate limiting for Email Verification API, 10 requests per 15 minutes
+export const verifyEmailLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many verification attempts, please try again later"));
+    }
+});
+
+// Rate limiting for Resend Verification Code API, 3 requests per 15 minutes
+export const resendVerificationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 3,
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many resend attempts, please try again later"));
+    }
+});

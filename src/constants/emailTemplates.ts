@@ -23,20 +23,17 @@ export const VERIFICATION_EMAIL_TEMPLATE = `
                     <tr>
                         <td bgcolor="#f9f9f9" style="padding: 20px; border-radius: 10px 10px 0 0;">
                             <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                                <tr>
-                                    <td width="180">
-                                        <img src="https://placehold.co/180x60" alt="Logo"
-                                            style="max-height: 60px; display: block;">
-                                    </td>
-                                    <td style="padding-left: 20px;">
-                                        <h1
-                                            style="margin: 0; color: #374151; font-size: 24px; font-family: Arial, Helvetica, sans-serif;">
-                                            Verify Your Email Address</h1>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
+                    <tr>
+            <td style="text-align: center;">
+                <h1
+                    style="margin: 0; color: #374151; font-size: 24px; font-family: Arial, Helvetica, sans-serif;">
+                    Verify Your Email Address
+                </h1>
+            </td>
+        </tr>
+        </table>
+    </td>
+</tr>
                     <tr>
                         <td bgcolor="#ffffff"
                             style="padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);">
