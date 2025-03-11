@@ -1,7 +1,7 @@
 import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 
-// Generate a secret key for TOTP
+// Generate a secret key for TOTP (Time-based One-Time Password)
 export const generateTOTPSecret = (email: string): { secret: string; otpauth_url: string } => {
     const secretConfig = speakeasy.generateSecret({
         name: `Khaled:${email}`,
