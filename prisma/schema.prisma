@@ -8,25 +8,26 @@ datasource db {
 }
 
 model User {
-  id        String @id @default(cuid())
-  firstName String
-  lastName  String
-  email     String @unique
-  password  String
-  role      Role   @default(USER)
-  verificationCode String?
-  codeExpiry DateTime?
-  isVerified Boolean @default(false)
-  resetPasswordCode String?
+  id                  String    @id @default(cuid())
+  firstName           String
+  lastName            String
+  email               String    @unique
+  password            String
+  role                Role      @default(USER)
+  verificationCode    String?
+  codeExpiry          DateTime?
+  isVerified          Boolean   @default(false)
+  resetPasswordCode   String?
   resetPasswordExpiry DateTime?
 
-  totpSecret String?
+  totpSecret  String?
   totpEnabled Boolean @default(false)
 
   LoginHistory LoginHistory[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  BlogPost  BlogPost[]
 }
 
 enum Role {
@@ -50,4 +51,48 @@ model LoginHistory {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+model BlogCategory {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+
+  posts BlogPost[] @relation("BlogPostCategories")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([slug])
+}
+
+model BlogPost {
+  id          String     @id @default(cuid())
+  title       String     @db.VarChar(255)
+  slug        String     @unique
+  content     String     @db.Text
+  excerpt     String?    @db.VarChar(300)
+  thumbnail   String?
+  status      BlogStatus @default(DRAFT)
+  readTime    Decimal?
+  publishedAt DateTime?
+  userId      String
+
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories BlogCategory[] @relation("BlogPostCategories")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug])
+  @@index([userId])
+  @@index([status])
+  @@index([publishedAt])
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
 }
