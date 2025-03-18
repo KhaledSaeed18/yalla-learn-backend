@@ -2,8 +2,10 @@ import express, { Express, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import cors from "cors";
 import { ErrorMiddleware } from './middlewares/error.middleware';
-import AuthRouter from './api/auth/auth.routes';
 import { securityHeaders } from './middlewares/securityHeaders.middleware';
+
+import AuthRouter from './api/auth/auth.routes';
+import BlogRouter from './api/blog/blog.routes';
 
 dotenv.config();
 
@@ -35,6 +37,10 @@ const baseUrl = `${process.env.BASE_URL!}/${version}`;
 // Authentication routes
 const authRouter = new AuthRouter();
 app.use(`${baseUrl}/auth`, authRouter.getRouter());
+
+// Blog routes
+const blogRouter = new BlogRouter();
+app.use(`${baseUrl}/blog`, blogRouter.getRouter());
 
 // 404 error handler
 app.use((_req: Request, res: Response) => {
