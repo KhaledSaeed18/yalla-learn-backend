@@ -70,6 +70,82 @@ const blogPostSchema = z.object({
         .default([]),
 });
 
+// Category update schema
+const categoryUpdateSchema = z.object({
+    name: z.string()
+        .trim()
+        .min(2, "Category name is required and must be at least 2 characters")
+        .max(50, "Category name cannot exceed 50 characters")
+        .regex(/^[a-zA-Z\s]+$/, "Category name can only contain letters and spaces")
+        .optional(),
+
+    slug: z.string()
+        .trim()
+        .min(2, "Slug is required and must be at least 2 characters")
+        .max(100, "Slug cannot exceed 100 characters")
+        .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens")
+        .optional(),
+
+    description: z.string()
+        .trim()
+        .max(500, "Description cannot exceed 500 characters")
+        .optional()
+        .nullable(),
+}).refine(data => Object.keys(data).length > 0, {
+    message: "At least one field must be provided for update"
+});
+
+// Blog Post update schema
+const blogPostUpdateSchema = z.object({
+    title: z.string()
+        .trim()
+        .min(5, "Title is required and must be at least 5 characters")
+        .max(255, "Title cannot exceed 255 characters")
+        .optional(),
+
+    slug: z.string()
+        .trim()
+        .min(5, "Slug is required and must be at least 5 characters")
+        .max(200, "Slug cannot exceed 200 characters")
+        .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens")
+        .optional(),
+
+    content: z.string()
+        .trim()
+        .min(10, "Content is required and must be at least 10 characters")
+        .optional(),
+
+    excerpt: z.string()
+        .trim()
+        .max(300, "Excerpt cannot exceed 300 characters")
+        .optional()
+        .nullable(),
+
+    thumbnail: z.string()
+        .trim()
+        .url("Thumbnail must be a valid URL")
+        .optional()
+        .nullable(),
+
+    status: z.nativeEnum(BlogStatus)
+        .optional(),
+
+    readTime: z.number()
+        .positive("Read time must be positive")
+        .optional()
+        .nullable(),
+
+    publishedAt: z.string()
+        .datetime("Published date must be a valid ISO datetime")
+        .optional()
+        .nullable(),
+
+    categoryIds: z.array(z.string())
+        .optional(),
+}).refine(data => Object.keys(data).length > 0, {
+    message: "At least one field must be provided for update"
+});
+
 // Get blog query params schema
 const getBlogQuerySchema = z.object({
     page: z.string()
@@ -132,5 +208,7 @@ const validateQuery = <T extends z.ZodSchema>(schema: T) => (req: Request, res: 
 };
 
 export const validateCategoryCreate = validate(categorySchema);
+export const validateCategoryUpdate = validate(categoryUpdateSchema);
 export const validateBlogPostCreate = validate(blogPostSchema);
+export const validateBlogPostUpdate = validate(blogPostUpdateSchema);
 export const validateGetBlogQuery = validateQuery(getBlogQuerySchema);

@@ -1,8 +1,8 @@
 import { Router } from "express";
 import BlogController from "./blog.controller";
-import { categoryCreateLimiter, categoryGetLimiter, postCreateLimiter, postGetLimiter } from "./blog.rateLimiting";
-import { validateBlogPostCreate, validateCategoryCreate, validateGetBlogQuery } from "./blog.validation";
-import { authorize } from "../../middlewares/authorization.middleware";
+import { categoryCreateLimiter, categoryGetLimiter, categoryUpdateLimiter, categoryDeleteLimiter, postCreateLimiter, postGetLimiter, postUpdateLimiter, postDeleteLimiter } from "./blog.rateLimiting";
+import { validateBlogPostCreate, validateBlogPostUpdate, validateCategoryCreate, validateCategoryUpdate, validateGetBlogQuery } from "./blog.validation";
+import { authorize, authorizeAdmin } from "../../middlewares/authorization.middleware";
 import { sanitizeRequestBody } from '../../middlewares/sanitizeBody.middleware';
 
 export default class BlogRouter {
@@ -20,6 +20,7 @@ export default class BlogRouter {
         this.router.post(
             "/create-category",
             authorize,
+            authorizeAdmin,
             categoryCreateLimiter,
             sanitizeRequestBody,
             validateCategoryCreate,
@@ -36,6 +37,24 @@ export default class BlogRouter {
             "/get-category/:id",
             categoryGetLimiter,
             this.blogController.getCategoryById
+        );
+
+        this.router.put(
+            "/update-category/:id",
+            authorize,
+            authorizeAdmin,
+            categoryUpdateLimiter,
+            sanitizeRequestBody,
+            validateCategoryUpdate,
+            this.blogController.updateCategory
+        );
+
+        this.router.delete(
+            "/delete-category/:id",
+            authorize,
+            authorizeAdmin,
+            categoryDeleteLimiter,
+            this.blogController.deleteCategory
         );
 
         // Blog post routes
@@ -59,6 +78,22 @@ export default class BlogRouter {
             "/get-post/:idOrSlug",
             postGetLimiter,
             this.blogController.getBlogPostByIdOrSlug
+        );
+
+        this.router.put(
+            "/update-post/:id",
+            authorize,
+            postUpdateLimiter,
+            sanitizeRequestBody,
+            validateBlogPostUpdate,
+            this.blogController.updateBlogPost
+        );
+
+        this.router.delete(
+            "/delete-post/:id",
+            authorize,
+            postDeleteLimiter,
+            this.blogController.deleteBlogPost
         );
     }
 

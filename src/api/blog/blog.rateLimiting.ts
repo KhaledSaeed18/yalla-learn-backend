@@ -18,6 +18,22 @@ export const categoryGetLimiter = rateLimit({
     }
 });
 
+export const categoryUpdateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20, // 20 requests per 15 minutes
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many category update attempts, please try again later"));
+    }
+});
+
+export const categoryDeleteLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10, // 10 requests per 15 minutes
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many category deletion attempts, please try again later"));
+    }
+});
+
 // Rate limiting for blog post endpoints
 export const postCreateLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -32,5 +48,21 @@ export const postGetLimiter = rateLimit({
     max: 200, // 200 requests per 15 minutes
     handler: (_req, _res, next) => {
         next(errorHandler(429, "Too many post retrieval attempts, please try again later"));
+    }
+});
+
+export const postUpdateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20, // 20 requests per 15 minutes
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many post update attempts, please try again later"));
+    }
+});
+
+export const postDeleteLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10, // 10 requests per 15 minutes
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many post deletion attempts, please try again later"));
     }
 });
