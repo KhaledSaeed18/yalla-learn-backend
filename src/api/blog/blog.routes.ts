@@ -62,7 +62,6 @@ export default class BlogRouter {
             "/create-post",
             authorize,
             postCreateLimiter,
-            sanitizeRequestBody,
             validateBlogPostCreate,
             this.blogController.createBlogPost
         );
@@ -92,7 +91,6 @@ export default class BlogRouter {
             "/update-post/:id",
             authorize,
             postUpdateLimiter,
-            sanitizeRequestBody,
             validateBlogPostUpdate,
             this.blogController.updateBlogPost
         );
