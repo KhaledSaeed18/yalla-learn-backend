@@ -68,6 +68,14 @@ export default class BlogRouter {
         );
 
         this.router.get(
+            "/get-user-blogs",
+            authorize,
+            postGetLimiter,
+            validateGetBlogQuery,
+            this.blogController.getUserBlogPosts
+        );
+
+        this.router.get(
             "/get-posts",
             postGetLimiter,
             validateGetBlogQuery,

@@ -15,6 +15,7 @@ export default class BlogController {
         this.deleteCategory = this.deleteCategory.bind(this);
         this.createBlogPost = this.createBlogPost.bind(this);
         this.getBlogPosts = this.getBlogPosts.bind(this);
+        this.getUserBlogPosts = this.getUserBlogPosts.bind(this);
         this.getBlogPostByIdOrSlug = this.getBlogPostByIdOrSlug.bind(this);
         this.updateBlogPost = this.updateBlogPost.bind(this);
         this.deleteBlogPost = this.deleteBlogPost.bind(this);
@@ -236,6 +237,60 @@ export default class BlogController {
             });
         } catch (err) {
             next(errorHandler(500, (err as Error).message || "Failed to retrieve blog posts"));
+        }
+    }
+
+    // Get blog posts for the authenticated user
+    async getUserBlogPosts(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+
+            if (!userId) {
+                next(errorHandler(401, "Unauthorized - User ID not found"));
+                return;
+            }
+
+            const {
+                page,
+                limit,
+                status,
+                categoryId,
+                search,
+                sortBy,
+                sortOrder
+            } = req.query as {
+                page?: string;
+                limit?: string;
+                status?: string;
+                categoryId?: string;
+                search?: string;
+                sortBy?: string;
+                sortOrder?: string;
+            };
+
+            const options: BlogQueryOptions = {
+                page: page ? parseInt(page) : undefined,
+                limit: limit ? parseInt(limit) : undefined,
+                status: status as BlogStatus | undefined,
+                categoryId,
+                search,
+                sortBy,
+                sortOrder: sortOrder as 'asc' | 'desc' | undefined
+            };
+
+            const result = await this.blogService.getUserBlogPosts(userId, options);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "User blog posts retrieved successfully",
+                data: {
+                    posts: result.posts,
+                    pagination: result.pagination
+                }
+            });
+        } catch (err) {
+            next(errorHandler(500, (err as Error).message || "Failed to retrieve user blog posts"));
         }
     }
 

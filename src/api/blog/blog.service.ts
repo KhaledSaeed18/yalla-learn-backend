@@ -58,6 +58,88 @@ export class BlogService {
         return categories;
     }
 
+    // Get blog posts for a specific user
+    public async getUserBlogPosts(userId: string, options: BlogQueryOptions = {}) {
+        const {
+            page = 1,
+            limit = 10,
+            status,
+            categoryId,
+            search,
+            sortBy = 'createdAt',
+            sortOrder = 'desc'
+        } = options;
+
+        const skip = (page - 1) * limit;
+
+        const where: {
+            userId: string;
+            status?: BlogStatus;
+            categories?: { some: { id: string } };
+            OR?: Array<
+                | { title: { contains: string; mode: 'insensitive' } }
+                | { content: { contains: string; mode: 'insensitive' } }
+                | { excerpt: { contains: string; mode: 'insensitive' } }
+            >;
+        } = { userId };
+
+        // Filter by status if provided
+        if (status) {
+            where.status = status;
+        }
+
+        // Filter by category if provided
+        if (categoryId) {
+            where.categories = {
+                some: {
+                    id: categoryId
+                }
+            };
+        }
+
+        // Search functionality
+        if (search) {
+            where.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { content: { contains: search, mode: 'insensitive' } },
+                { excerpt: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+
+        // Get total count for pagination
+        const totalCount = await this.prisma.blogPost.count({ where });
+
+        // Get user's blog posts with filtering, sorting and pagination
+        const posts = await this.prisma.blogPost.findMany({
+            where,
+            include: {
+                categories: true,
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true
+                    }
+                }
+            },
+            orderBy: {
+                [sortBy]: sortOrder
+            },
+            skip,
+            take: limit
+        });
+
+        return {
+            posts,
+            pagination: {
+                total: totalCount,
+                page,
+                limit,
+                totalPages: Math.ceil(totalCount / limit)
+            }
+        };
+    }
+
     // Get a blog category by id
     public async getCategoryById(id: string) {
         const category = await this.prisma.blogCategory.findUnique({
@@ -394,7 +476,7 @@ export class BlogService {
 
             updatedData.categories = {
                 set: [], // Disconnect all existing categories
-                connect: data.categoryIds.map(id => ({ id })) 
+                connect: data.categoryIds.map(id => ({ id }))
             };
         }
 
