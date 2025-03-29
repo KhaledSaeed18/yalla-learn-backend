@@ -19,6 +19,7 @@ export default class BlogController {
         this.getBlogPostByIdOrSlug = this.getBlogPostByIdOrSlug.bind(this);
         this.updateBlogPost = this.updateBlogPost.bind(this);
         this.deleteBlogPost = this.deleteBlogPost.bind(this);
+        this.adminDeleteBlogPost = this.adminDeleteBlogPost.bind(this);
     }
 
     // Create a new blog category
@@ -409,6 +410,27 @@ export default class BlogController {
             }
             if ((err as Error).message.includes("Unauthorized")) {
                 next(errorHandler(403, (err as Error).message));
+                return;
+            }
+            next(errorHandler(500, (err as Error).message || "Failed to delete blog post"));
+        }
+    }
+
+    // Admin method to delete any blog post
+    async adminDeleteBlogPost(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+
+            await this.blogService.adminDeleteBlogPost(id);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Blog post deleted successfully by admin"
+            });
+        } catch (err) {
+            if ((err as Error).message === "Blog post not found") {
+                next(errorHandler(404, "Blog post not found"));
                 return;
             }
             next(errorHandler(500, (err as Error).message || "Failed to delete blog post"));

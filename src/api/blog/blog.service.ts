@@ -526,4 +526,21 @@ export class BlogService {
 
         return { id };
     }
+
+    // Admin method to delete any blog post
+    public async adminDeleteBlogPost(id: string) {
+        const post = await this.prisma.blogPost.findUnique({
+            where: { id }
+        });
+
+        if (!post) {
+            throw new Error("Blog post not found");
+        }
+
+        await this.prisma.blogPost.delete({
+            where: { id }
+        });
+
+        return { id };
+    }
 }

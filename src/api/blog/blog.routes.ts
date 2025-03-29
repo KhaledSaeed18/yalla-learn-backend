@@ -101,6 +101,15 @@ export default class BlogRouter {
             postDeleteLimiter,
             this.blogController.deleteBlogPost
         );
+
+        // Admin route to delete any blog post
+        this.router.delete(
+            "/admin/delete-post/:id",
+            authorize,
+            authorizeAdmin,
+            postDeleteLimiter,
+            this.blogController.adminDeleteBlogPost
+        );
     }
 
     // Returns the router object
