@@ -20,6 +20,7 @@ export default class BlogController {
         this.updateBlogPost = this.updateBlogPost.bind(this);
         this.deleteBlogPost = this.deleteBlogPost.bind(this);
         this.adminDeleteBlogPost = this.adminDeleteBlogPost.bind(this);
+        this.getBlogStatistics = this.getBlogStatistics.bind(this);
     }
 
     // Create a new blog category
@@ -434,6 +435,22 @@ export default class BlogController {
                 return;
             }
             next(errorHandler(500, (err as Error).message || "Failed to delete blog post"));
+        }
+    }
+
+    // Get blog statistics for admin dashboard
+    async getBlogStatistics(_req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const statistics = await this.blogService.getBlogStatistics();
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Blog statistics retrieved successfully",
+                data: { statistics }
+            });
+        } catch (err) {
+            next(errorHandler(500, (err as Error).message || "Failed to retrieve blog statistics"));
         }
     }
 }

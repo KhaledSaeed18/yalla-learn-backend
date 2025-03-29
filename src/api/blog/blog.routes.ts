@@ -81,6 +81,14 @@ export default class BlogRouter {
             this.blogController.getBlogPosts
         );
 
+        // Admin dashboard statistics route
+        this.router.get(
+            "/admin/statistics",
+            postGetLimiter,
+            authorize,
+            authorizeAdmin,
+            this.blogController.getBlogStatistics
+        );
         this.router.get(
             "/get-post/:idOrSlug",
             postGetLimiter,

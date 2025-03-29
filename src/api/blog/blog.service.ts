@@ -546,4 +546,136 @@ export class BlogService {
 
         return { id };
     }
+
+    // Get blog statistics for admin dashboard
+    public async getBlogStatistics() {
+        // Total number of posts
+        const totalPosts = await this.prisma.blogPost.count();
+
+        // Posts by status
+        const publishedPosts = await this.prisma.blogPost.count({
+            where: { status: BlogStatus.PUBLISHED }
+        });
+
+        const draftPosts = await this.prisma.blogPost.count({
+            where: { status: BlogStatus.DRAFT }
+        });
+
+        // Most active authors (top 5)
+        const topAuthors = await this.prisma.user.findMany({
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                _count: {
+                    select: { BlogPost: true }
+                }
+            },
+            orderBy: {
+                BlogPost: { _count: 'desc' }
+            },
+            take: 5
+        });
+
+        // Posts per category
+        const categories = await this.prisma.blogCategory.findMany({
+            select: {
+                id: true,
+                name: true,
+                _count: {
+                    select: { posts: true }
+                }
+            },
+            orderBy: {
+                posts: { _count: 'desc' }
+            }
+        });
+
+        // Posts created in the last 7 days
+        const lastWeekPosts = await this.prisma.blogPost.count({
+            where: {
+                createdAt: {
+                    gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                }
+            }
+        });
+
+        // Posts created in the last 30 days
+        const lastMonthPosts = await this.prisma.blogPost.count({
+            where: {
+                createdAt: {
+                    gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                }
+            }
+        });
+
+        // Recent posts with activity (last 5 created or updated)
+        const recentPosts = await this.prisma.blogPost.findMany({
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true,
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true
+                    }
+                }
+            },
+            orderBy: { updatedAt: 'desc' },
+            take: 5
+        });
+
+        // Posts without categories
+        const postsWithoutCategories = await this.prisma.blogPost.count({
+            where: {
+                categories: {
+                    none: {}
+                }
+            }
+        });
+
+        // Average posts per user (users who have at least one post)
+        const usersWithPosts = await this.prisma.user.count({
+            where: {
+                BlogPost: {
+                    some: {}
+                }
+            }
+        });
+
+        const averagePostsPerUser = usersWithPosts > 0
+            ? totalPosts / usersWithPosts
+            : 0;
+
+        return {
+            totalPosts,
+            postsByStatus: {
+                published: publishedPosts,
+                draft: draftPosts
+            },
+            topAuthors: topAuthors.map(author => ({
+                id: author.id,
+                name: `${author.firstName} ${author.lastName}`,
+                postCount: author._count.BlogPost
+            })),
+            categoriesDistribution: categories.map(category => ({
+                id: category.id,
+                name: category.name,
+                postCount: category._count.posts
+            })),
+            recentActivity: {
+                lastWeekPosts,
+                lastMonthPosts,
+                recentPosts
+            },
+            metadata: {
+                postsWithoutCategories,
+                averagePostsPerUser: parseFloat(averagePostsPerUser.toFixed(2))
+            }
+        };
+    }
 }
