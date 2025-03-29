@@ -448,10 +448,13 @@ export class BlogService {
             }
         }
 
+        // Create a clean update data object without categoryIds
+        const { categoryIds, ...updateData } = data;
+
         // Handle published date if status is being updated to PUBLISHED
         const updatedData: BlogPostUpdateData = {
-            ...data,
-            publishedAt: data.publishedAt ? new Date(data.publishedAt) : undefined
+            ...updateData,
+            publishedAt: updateData.publishedAt ? new Date(updateData.publishedAt) : undefined
         };
 
         if (data.status === BlogStatus.PUBLISHED && post.status !== BlogStatus.PUBLISHED) {
@@ -459,24 +462,24 @@ export class BlogService {
         }
 
         // Handle category updates if provided
-        if (data.categoryIds) {
-            if (data.categoryIds.length > 0) {
+        if (categoryIds) {
+            if (categoryIds.length > 0) {
                 const categories = await this.prisma.blogCategory.findMany({
                     where: {
                         id: {
-                            in: data.categoryIds
+                            in: categoryIds
                         }
                     }
                 });
 
-                if (categories.length !== data.categoryIds.length) {
+                if (categories.length !== categoryIds.length) {
                     throw new Error("One or more categories not found");
                 }
             }
 
             updatedData.categories = {
                 set: [], // Disconnect all existing categories
-                connect: data.categoryIds.map(id => ({ id }))
+                connect: categoryIds.map(id => ({ id }))
             };
         }
 

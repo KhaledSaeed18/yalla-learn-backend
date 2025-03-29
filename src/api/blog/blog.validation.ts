@@ -121,11 +121,11 @@ const blogPostUpdateSchema = z.object({
         .optional()
         .nullable(),
 
-    thumbnail: z.string()
-        .trim()
-        .url("Thumbnail must be a valid URL")
-        .optional()
-        .nullable(),
+    thumbnail: z.union([
+        z.string().trim().url("Thumbnail must be a valid URL"),
+        z.null(),
+        z.string().length(0)
+    ]).optional(),
 
     status: z.nativeEnum(BlogStatus)
         .optional(),
