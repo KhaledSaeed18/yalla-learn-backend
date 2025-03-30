@@ -23,11 +23,17 @@ model User {
   totpSecret  String?
   totpEnabled Boolean @default(false)
 
-  LoginHistory LoginHistory[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  BlogPost  BlogPost[]
+  LoginHistory    LoginHistory[]
+  BlogPost        BlogPost[]
+  Question        Question[]
+  Answer          Answer[]
+  QuestionComment QuestionComment[]
+  AnswerComment   AnswerComment[]
+  QuestionVote    QuestionVote[]
+  AnswerVote      AnswerVote[]
 }
 
 enum Role {
@@ -95,4 +101,119 @@ model BlogPost {
 enum BlogStatus {
   DRAFT
   PUBLISHED
+}
+
+model Question {
+  id               String         @id @default(cuid())
+  title            String         @db.VarChar(255)
+  content          String         @db.Text
+  userId           String
+  status           QuestionStatus @default(OPEN)
+  acceptedAnswerId String?
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers  Answer[]
+  tags     Tag[]             @relation("QuestionTags")
+  votes    QuestionVote[]
+  comments QuestionComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([title])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum QuestionStatus {
+  OPEN
+  CLOSED
+}
+
+model Answer {
+  id         String  @id @default(cuid())
+  content    String  @db.Text
+  userId     String
+  questionId String
+  isAccepted Boolean @default(false)
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  votes    AnswerVote[]
+  comments AnswerComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([questionId])
+}
+
+model QuestionComment {
+  id         String @id @default(cuid())
+  content    String @db.Text
+  userId     String
+  questionId String
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AnswerComment {
+  id       String @id @default(cuid())
+  content  String @db.Text
+  userId   String
+  answerId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answer Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tag {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  questions Question[] @relation("QuestionTags")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QuestionVote {
+  id         String   @id @default(cuid())
+  userId     String
+  questionId String
+  type       VoteType
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, questionId])
+}
+
+model AnswerVote {
+  id       String   @id @default(cuid())
+  userId   String
+  answerId String
+  type     VoteType
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answer Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, answerId])
+}
+
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
 }
