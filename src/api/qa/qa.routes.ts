@@ -194,6 +194,15 @@ export default class QARouter {
             authorize,
             this.qaController.getUserVotes
         );
+
+        // **** Admin Statistics **** //
+        // Get Q&A statistics for admin dashboard
+        this.router.get(
+            "/admin/statistics",
+            authorize,
+            authorizeAdmin,
+            this.qaController.getQAStatistics
+        );
     }
 
     // Returns the router object

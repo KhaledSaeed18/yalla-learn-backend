@@ -27,6 +27,7 @@ export default class QAController {
         this.acceptAnswer = this.acceptAnswer.bind(this);
         this.unacceptAnswer = this.unacceptAnswer.bind(this);
         this.getUserVotes = this.getUserVotes.bind(this);
+        this.getQAStatistics = this.getQAStatistics.bind(this);
     }
 
     //  **** Tag methods **** //
@@ -541,6 +542,30 @@ export default class QAController {
             });
         } catch (err) {
             next(errorHandler(500, (err as Error).message || "Failed to retrieve user votes"));
+        }
+    }
+
+    // Get Q&A statistics for admin dashboard
+    async getQAStatistics(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            if (!req.user) {
+                return next(errorHandler(401, "Authentication required"));
+            }
+
+            if (req.user.role !== 'ADMIN') {
+                return next(errorHandler(403, "Unauthorized: Admin access required"));
+            }
+
+            const statistics = await this.qaService.getQAStatistics();
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Q&A statistics retrieved successfully",
+                data: { statistics }
+            });
+        } catch (err) {
+            next(errorHandler(500, (err as Error).message || "Failed to retrieve Q&A statistics"));
         }
     }
 }

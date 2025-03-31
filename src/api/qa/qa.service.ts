@@ -856,4 +856,243 @@ export class QAService {
 
         return voteMap;
     }
+
+    // Get Q&A statistics for admin dashboard
+    public async getQAStatistics() {
+        // Total counts
+        const totalQuestions = await this.prisma.question.count();
+        const totalAnswers = await this.prisma.answer.count();
+        const totalTags = await this.prisma.tag.count();
+
+        // Questions by status
+        const openQuestions = await this.prisma.question.count({
+            where: { status: QuestionStatus.OPEN }
+        });
+
+        const closedQuestions = await this.prisma.question.count({
+            where: { status: QuestionStatus.CLOSED }
+        });
+
+        // Most active users (top 5 question askers)
+        const topQuestionAskers = await this.prisma.user.findMany({
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                _count: {
+                    select: { Question: true }
+                }
+            },
+            orderBy: {
+                Question: { _count: 'desc' }
+            },
+            take: 5
+        });
+
+        // Most active answerers (top 5)
+        const topAnswerers = await this.prisma.user.findMany({
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                _count: {
+                    select: { Answer: true }
+                }
+            },
+            orderBy: {
+                Answer: { _count: 'desc' }
+            },
+            take: 5
+        });
+
+        // Most used tags (top 10)
+        const popularTags = await this.prisma.tag.findMany({
+            select: {
+                id: true,
+                name: true,
+                _count: {
+                    select: { questions: true }
+                }
+            },
+            orderBy: {
+                questions: { _count: 'desc' }
+            },
+            take: 10
+        });
+
+        // Questions created in the last 7 days
+        const lastWeekQuestions = await this.prisma.question.count({
+            where: {
+                createdAt: {
+                    gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                }
+            }
+        });
+
+        // Questions created in the last 30 days
+        const lastMonthQuestions = await this.prisma.question.count({
+            where: {
+                createdAt: {
+                    gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                }
+            }
+        });
+
+        // Answers created in the last 7 days
+        const lastWeekAnswers = await this.prisma.answer.count({
+            where: {
+                createdAt: {
+                    gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                }
+            }
+        });
+
+        // Answers created in the last 30 days
+        const lastMonthAnswers = await this.prisma.answer.count({
+            where: {
+                createdAt: {
+                    gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                }
+            }
+        });
+
+        // Recent activity (last 5 questions and answers)
+        const recentQuestions = await this.prisma.question.findMany({
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true,
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true
+                    }
+                }
+            },
+            orderBy: { updatedAt: 'desc' },
+            take: 5
+        });
+
+        const recentAnswers = await this.prisma.answer.findMany({
+            select: {
+                id: true,
+                content: true,
+                isAccepted: true,
+                upvotes: true,
+                downvotes: true,
+                createdAt: true,
+                updatedAt: true,
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true
+                    }
+                },
+                question: {
+                    select: {
+                        id: true,
+                        title: true,
+                        slug: true
+                    }
+                }
+            },
+            orderBy: { updatedAt: 'desc' },
+            take: 5
+        });
+
+        // Questions without answers
+        const questionsWithoutAnswers = await this.prisma.question.count({
+            where: {
+                answers: {
+                    none: {}
+                }
+            }
+        });
+
+        // Questions without accepted answers (but have some answers)
+        const questionsWithoutAcceptedAnswers = await this.prisma.question.count({
+            where: {
+                acceptedAnswerId: null,
+                answers: {
+                    some: {}
+                }
+            }
+        });
+
+        // Average answers per question
+        const averageAnswersPerQuestion = totalQuestions > 0
+            ? (await this.prisma.answer.count()) / totalQuestions
+            : 0;
+
+        // Most voted answers (top 5)
+        const mostUpvotedAnswers = await this.prisma.answer.findMany({
+            select: {
+                id: true,
+                content: true,
+                upvotes: true,
+                downvotes: true,
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true
+                    }
+                },
+                question: {
+                    select: {
+                        id: true,
+                        title: true,
+                        slug: true
+                    }
+                }
+            },
+            orderBy: { upvotes: 'desc' },
+            take: 5
+        });
+
+        return {
+            totalCounts: {
+                questions: totalQuestions,
+                answers: totalAnswers,
+                tags: totalTags
+            },
+            questionsByStatus: {
+                open: openQuestions,
+                closed: closedQuestions
+            },
+            userActivity: {
+                topQuestionAskers: topQuestionAskers.map(user => ({
+                    id: user.id,
+                    name: `${user.firstName} ${user.lastName}`,
+                    questionCount: user._count.Question
+                })),
+                topAnswerers: topAnswerers.map(user => ({
+                    id: user.id,
+                    name: `${user.firstName} ${user.lastName}`,
+                    answerCount: user._count.Answer
+                }))
+            },
+            tagDistribution: popularTags.map(tag => ({
+                id: tag.id,
+                name: tag.name,
+                questionCount: tag._count.questions
+            })),
+            recentActivity: {
+                lastWeekQuestions,
+                lastMonthQuestions,
+                lastWeekAnswers,
+                lastMonthAnswers,
+                recentQuestions,
+                recentAnswers
+            },
+            metrics: {
+                questionsWithoutAnswers,
+                questionsWithoutAcceptedAnswers,
+                averageAnswersPerQuestion: parseFloat(averageAnswersPerQuestion.toFixed(2)),
+                mostUpvotedAnswers
+            }
+        };
+    }
 }
