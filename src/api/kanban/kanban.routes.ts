@@ -1,4 +1,4 @@
-import express from 'express';
+import { Router } from 'express';
 import KanbanController from './kanban.controller';
 import {
     createBoardValidation,
@@ -26,105 +26,118 @@ import {
 } from './kanban.rateLimiting';
 import { authorize } from '../../middlewares/authorization.middleware';
 
-const router = express.Router();
-const kanbanController = new KanbanController();
+export default class KanbanRouter {
+    private router: Router;
+    private kanbanController: KanbanController;
 
-// Board routes
-router.post(
-    '/boards',
-    authorize,
-    boardCreateLimiter,
-    createBoardValidation,
-    kanbanController.createBoard
-);
+    constructor() {
+        this.router = Router();
+        this.kanbanController = new KanbanController();
+        this.initRoutes();
+    }
 
-router.get(
-    '/boards',
-    authorize,
-    boardGetLimiter,
-    kanbanController.getBoards
-);
+    private initRoutes(): void {
+        // Board routes
+        this.router.post(
+            '/boards',
+            authorize,
+            boardCreateLimiter,
+            createBoardValidation,
+            this.kanbanController.createBoard
+        );
 
-router.get(
-    '/boards/:id',
-    authorize,
-    boardGetLimiter,
-    boardIdValidation,
-    kanbanController.getBoardById
-);
+        this.router.get(
+            '/boards',
+            authorize,
+            boardGetLimiter,
+            this.kanbanController.getBoards
+        );
 
-router.put(
-    '/boards/:id',
-    authorize,
-    boardUpdateLimiter,
-    updateBoardValidation,
-    kanbanController.updateBoard
-);
+        this.router.get(
+            '/boards/:id',
+            authorize,
+            boardGetLimiter,
+            boardIdValidation,
+            this.kanbanController.getBoardById
+        );
 
-router.delete(
-    '/boards/:id',
-    authorize,
-    boardDeleteLimiter,
-    boardIdValidation,
-    kanbanController.deleteBoard
-);
+        this.router.put(
+            '/boards/:id',
+            authorize,
+            boardUpdateLimiter,
+            updateBoardValidation,
+            this.kanbanController.updateBoard
+        );
 
-// Column routes
-router.post(
-    '/boards/:boardId/columns',
-    authorize,
-    columnCreateLimiter,
-    createColumnValidation,
-    kanbanController.createColumn
-);
+        this.router.delete(
+            '/boards/:id',
+            authorize,
+            boardDeleteLimiter,
+            boardIdValidation,
+            this.kanbanController.deleteBoard
+        );
 
-router.put(
-    '/columns/:id',
-    authorize,
-    columnUpdateLimiter,
-    updateColumnValidation,
-    kanbanController.updateColumn
-);
+        // Column routes
+        this.router.post(
+            '/boards/:boardId/columns',
+            authorize,
+            columnCreateLimiter,
+            createColumnValidation,
+            this.kanbanController.createColumn
+        );
 
-router.delete(
-    '/columns/:id',
-    authorize,
-    columnDeleteLimiter,
-    columnIdValidation,
-    kanbanController.deleteColumn
-);
+        this.router.put(
+            '/columns/:id',
+            authorize,
+            columnUpdateLimiter,
+            updateColumnValidation,
+            this.kanbanController.updateColumn
+        );
 
-// Task routes
-router.post(
-    '/columns/:columnId/tasks',
-    authorize,
-    taskCreateLimiter,
-    createTaskValidation,
-    kanbanController.createTask
-);
+        this.router.delete(
+            '/columns/:id',
+            authorize,
+            columnDeleteLimiter,
+            columnIdValidation,
+            this.kanbanController.deleteColumn
+        );
 
-router.get(
-    '/tasks/:id',
-    authorize,
-    taskGetLimiter,
-    taskIdValidation,
-    kanbanController.getTaskById
-);
+        // Task routes
+        this.router.post(
+            '/columns/:columnId/tasks',
+            authorize,
+            taskCreateLimiter,
+            createTaskValidation,
+            this.kanbanController.createTask
+        );
 
-router.put(
-    '/tasks/:id',
-    authorize,
-    taskUpdateLimiter,
-    updateTaskValidation,
-    kanbanController.updateTask
-);
+        this.router.get(
+            '/tasks/:id',
+            authorize,
+            taskGetLimiter,
+            taskIdValidation,
+            this.kanbanController.getTaskById
+        );
 
-router.delete(
-    '/tasks/:id',
-    authorize,
-    taskDeleteLimiter,
-    taskIdValidation,
-    kanbanController.deleteTask
-);
+        this.router.put(
+            '/tasks/:id',
+            authorize,
+            taskUpdateLimiter,
+            updateTaskValidation,
+            this.kanbanController.updateTask
+        );
 
-export default router;
+        this.router.delete(
+            '/tasks/:id',
+            authorize,
+            taskDeleteLimiter,
+            taskIdValidation,
+            this.kanbanController.deleteTask
+        );
+    }
+
+    // Returns the router object
+    public getRouter(): Router {
+        return this.router;
+    }
+}
