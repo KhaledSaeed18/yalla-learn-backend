@@ -32,6 +32,7 @@ model User {
   Answer       Answer[]
   AnswerVote   AnswerVote[]
   Listing      Listing[]
+  GigService   GigService[]
 }
 
 enum Role {
@@ -180,17 +181,16 @@ enum VoteType {
 }
 
 model Listing {
-  id          String    @id @default(uuid())
+  id          String          @id @default(uuid())
   title       String
   description String
   price       Float?
   condition   Condition
-  category    String
+  category    ListingCategory
   images      String[]
-  isAvailable Boolean   @default(true)
+  isAvailable Boolean         @default(true)
   userId      String
 
-  // Rental properties
   isRentable   Boolean @default(false)
   rentalPeriod Int?
 
@@ -206,7 +206,6 @@ model Listing {
   @@index([price])
   @@index([category])
   @@index([condition])
-  @@index([title])
 }
 
 enum Condition {
@@ -215,4 +214,59 @@ enum Condition {
   GOOD
   FAIR
   POOR
+}
+
+enum ListingCategory {
+  ELECTRONICS
+  CLOTHING
+  BOOKS
+  COURSE_MATERIALS
+  MUSICAL_INSTRUMENTS
+  SPORTS_EQUIPMENT
+  TOOLS
+  OTHER
+}
+
+model GigService {
+  id          String           @id @default(uuid())
+  title       String
+  description String
+  price       Float?
+  category    GigCategory
+  direction   ServiceDirection @default(OFFERING)
+  userId      String
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([direction])
+  @@index([createdAt])
+  @@index([price])
+  @@index([category])
+}
+
+enum ServiceDirection {
+  OFFERING
+  REQUESTING
+}
+
+enum GigCategory {
+  TUTORING
+  NOTES_SHARING
+  ACADEMIC_WRITING
+  DESIGN_SERVICES
+  CODING_HELP
+  LANGUAGE_TRANSLATION
+  EVENT_PLANNING
+  PHOTOGRAPHY
+  MUSIC_LESSONS
+  RESEARCH_ASSISTANCE
+  EXAM_PREP
+  RESUME_WRITING
+  CAMPUS_DELIVERY
+  TECHNICAL_REPAIR
+  OTHER
 }
