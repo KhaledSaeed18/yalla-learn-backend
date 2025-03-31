@@ -33,6 +33,8 @@ model User {
   AnswerVote   AnswerVote[]
   Listing      Listing[]
   GigService   GigService[]
+  Board        Board[]
+  Task         Task[]
 }
 
 enum Role {
@@ -157,8 +159,9 @@ model Tag {
   name      String     @unique
   questions Question[] @relation("QuestionTags")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  TaskTag   TaskTag[]
 }
 
 model AnswerVote {
@@ -269,4 +272,73 @@ enum GigCategory {
   CAMPUS_DELIVERY
   TECHNICAL_REPAIR
   OTHER
+}
+
+model Board {
+  id     String @id @default(uuid())
+  title  String
+  userId String
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  columns Column[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Column {
+  id        String  @id @default(uuid())
+  title     String
+  order     Int     @default(0)
+  isDefault Boolean @default(false)
+  boardId   String
+
+  board Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tasks Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([boardId])
+  @@index([order])
+}
+
+model Task {
+  id          String       @id @default(uuid())
+  title       String
+  description String?      @db.Text
+  priority    TaskPriority
+  dueDate     DateTime?
+  columnId    String
+  userId      String
+
+  column   Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id])
+  taskTags TaskTag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([columnId])
+  @@index([userId])
+  @@index([priority])
+  @@index([dueDate])
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model TaskTag {
+  taskId String
+  tagId  String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, tagId])
 }
