@@ -181,7 +181,7 @@ enum VoteType {
 }
 
 model Listing {
-  id          String          @id @default(uuid())
+  id          String          @id @default(cuid())
   title       String
   description String
   price       Float?
@@ -228,7 +228,7 @@ enum ListingCategory {
 }
 
 model GigService {
-  id          String           @id @default(uuid())
+  id          String           @id @default(cuid())
   title       String
   description String
   price       Float?
