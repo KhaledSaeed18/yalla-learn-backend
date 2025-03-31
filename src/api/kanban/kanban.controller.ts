@@ -18,6 +18,7 @@ export default class KanbanController {
         this.createTask = this.createTask.bind(this);
         this.getTaskById = this.getTaskById.bind(this);
         this.updateTask = this.updateTask.bind(this);
+        this.deleteTask = this.deleteTask.bind(this);
     }
 
     // Board methods
@@ -361,6 +362,35 @@ export default class KanbanController {
                 return;
             }
             next(errorHandler(500, (err as Error).message || "Failed to update task"));
+        }
+    }
+
+    async deleteTask(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+
+            if (!req.user) {
+                return next(errorHandler(401, "Authentication required"));
+            }
+            const userId = req.user.id;
+
+            await this.kanbanService.deleteTask(id, userId);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Task deleted successfully"
+            });
+        } catch (err) {
+            if ((err as Error).message === "Task not found") {
+                next(errorHandler(404, "Task not found"));
+                return;
+            }
+            if ((err as Error).message.includes("Unauthorized")) {
+                next(errorHandler(403, (err as Error).message));
+                return;
+            }
+            next(errorHandler(500, (err as Error).message || "Failed to delete task"));
         }
     }
 }
