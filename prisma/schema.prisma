@@ -31,6 +31,7 @@ model User {
   Question     Question[]
   Answer       Answer[]
   AnswerVote   AnswerVote[]
+  Listing      Listing[]
 }
 
 enum Role {
@@ -176,4 +177,42 @@ model AnswerVote {
 enum VoteType {
   UPVOTE
   DOWNVOTE
+}
+
+model Listing {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  price       Float?
+  condition   Condition
+  category    String
+  images      String[]
+  isAvailable Boolean   @default(true)
+  userId      String
+
+  // Rental properties
+  isRentable   Boolean @default(false)
+  rentalPeriod Int?
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isAvailable])
+  @@index([isRentable])
+  @@index([createdAt])
+  @@index([price])
+  @@index([category])
+  @@index([condition])
+  @@index([title])
+}
+
+enum Condition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+  POOR
 }
