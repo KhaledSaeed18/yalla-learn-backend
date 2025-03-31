@@ -6,6 +6,7 @@ import { securityHeaders } from './middlewares/securityHeaders.middleware';
 
 import AuthRouter from './api/auth/auth.routes';
 import BlogRouter from './api/blog/blog.routes';
+import QARouter from './api/qa/qa.routes';
 
 dotenv.config();
 
@@ -41,6 +42,10 @@ app.use(`${baseUrl}/auth`, authRouter.getRouter());
 // Blog routes
 const blogRouter = new BlogRouter();
 app.use(`${baseUrl}/blog`, blogRouter.getRouter());
+
+// QA routes
+const qaRouter = new QARouter();
+app.use(`${baseUrl}/qa`, qaRouter.getRouter());
 
 // 404 error handler
 app.use((_req: Request, res: Response) => {

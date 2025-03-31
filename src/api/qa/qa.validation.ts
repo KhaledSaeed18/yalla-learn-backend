@@ -30,39 +30,6 @@ const answerSchema = z.object({
         .min(1, "Question ID is required"),
 });
 
-// Comment creation schema for questions
-const questionCommentSchema = z.object({
-    content: z.string()
-        .trim()
-        .min(3, "Comment content is required and must be at least 3 characters")
-        .max(500, "Comment cannot exceed 500 characters"),
-
-    questionId: z.string()
-        .trim()
-        .min(1, "Question ID is required"),
-});
-
-// Comment creation schema for answers
-const answerCommentSchema = z.object({
-    content: z.string()
-        .trim()
-        .min(3, "Comment content is required and must be at least 3 characters")
-        .max(500, "Comment cannot exceed 500 characters"),
-
-    answerId: z.string()
-        .trim()
-        .min(1, "Answer ID is required"),
-});
-
-// Vote schema for questions
-const questionVoteSchema = z.object({
-    questionId: z.string()
-        .trim()
-        .min(1, "Question ID is required"),
-
-    type: z.nativeEnum(VoteType),
-});
-
 // Vote schema for answers
 const answerVoteSchema = z.object({
     answerId: z.string()
@@ -146,10 +113,42 @@ const getQuestionsQuerySchema = z.object({
     sortOrder: z.enum(['asc', 'desc']).optional(),
 });
 
+// Get answers query params schema
+const getAnswersQuerySchema = z.object({
+    page: z.string()
+        .transform(val => parseInt(val) || 1)
+        .refine(val => val > 0, { message: "Page must be a positive number" })
+        .optional(),
+
+    limit: z.string()
+        .transform(val => parseInt(val) || 10)
+        .refine(val => val > 0 && val <= 50, { message: "Limit must be between 1 and 50" })
+        .optional(),
+
+    questionId: z.string().optional(),
+
+    userId: z.string().optional(),
+
+    sortBy: z.enum(['createdAt', 'upvotes', 'isAccepted']).optional(),
+
+    sortOrder: z.enum(['asc', 'desc']).optional(),
+});
+
+// Update question status schema
+const updateQuestionStatusSchema = z.object({
+    status: z.nativeEnum(QuestionStatus),
+});
+
+// Get user votes schema
+const getUserVotesSchema = z.object({
+    answerId: z.string().optional(),
+    questionId: z.string().optional(),
+});
+
 // Validation middleware
 const validate = (schema: z.ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
     try {
-        schema.parse(req.body);
+        req.body = schema.parse(req.body);
         next();
     } catch (error) {
         if (error instanceof z.ZodError) {
@@ -186,12 +185,12 @@ const validateQuery = <T extends z.ZodSchema>(schema: T) => (req: Request, res: 
 
 export const validateQuestionCreate = validate(questionSchema);
 export const validateAnswerCreate = validate(answerSchema);
-export const validateQuestionCommentCreate = validate(questionCommentSchema);
-export const validateAnswerCommentCreate = validate(answerCommentSchema);
-export const validateQuestionVote = validate(questionVoteSchema);
 export const validateAnswerVote = validate(answerVoteSchema);
 export const validateTagCreate = validate(tagSchema);
 export const validateAcceptAnswer = validate(acceptAnswerSchema);
 export const validateUpdateQuestion = validate(updateQuestionSchema);
 export const validateUpdateAnswer = validate(updateAnswerSchema);
 export const validateGetQuestionsQuery = validateQuery(getQuestionsQuerySchema);
+export const validateGetAnswersQuery = validateQuery(getAnswersQuerySchema);
+export const validateUpdateQuestionStatus = validate(updateQuestionStatusSchema);
+export const validateGetUserVotes = validateQuery(getUserVotesSchema);

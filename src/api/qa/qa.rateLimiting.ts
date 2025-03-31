@@ -59,23 +59,6 @@ export const answerDeleteLimiter = rateLimit({
     }
 });
 
-// Rate limiting for comment operations
-export const commentCreateLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 30, // 30 requests per 15 minutes
-    handler: (_req, _res, next) => {
-        next(errorHandler(429, "Too many comment creation attempts, please try again later"));
-    }
-});
-
-export const commentDeleteLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20, // 20 requests per 15 minutes
-    handler: (_req, _res, next) => {
-        next(errorHandler(429, "Too many comment deletion attempts, please try again later"));
-    }
-});
-
 // Rate limiting for voting operations
 export const voteLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -91,6 +74,15 @@ export const tagCreateLimiter = rateLimit({
     max: 10, // 10 requests per 15 minutes
     handler: (_req, _res, next) => {
         next(errorHandler(429, "Too many tag creation attempts, please try again later"));
+    }
+});
+
+// Rate limiting for tag deletion
+export const tagDeleteLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20, // 20 requests per 15 minutes
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many tag deletion attempts, please try again later"));
     }
 });
 
