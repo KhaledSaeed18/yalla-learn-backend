@@ -26,14 +26,11 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  LoginHistory    LoginHistory[]
-  BlogPost        BlogPost[]
-  Question        Question[]
-  Answer          Answer[]
-  QuestionComment QuestionComment[]
-  AnswerComment   AnswerComment[]
-  QuestionVote    QuestionVote[]
-  AnswerVote      AnswerVote[]
+  LoginHistory LoginHistory[]
+  BlogPost     BlogPost[]
+  Question     Question[]
+  Answer       Answer[]
+  AnswerVote   AnswerVote[]
 }
 
 enum Role {
@@ -110,12 +107,11 @@ model Question {
   userId           String
   status           QuestionStatus @default(OPEN)
   acceptedAnswerId String?
+  slug             String         @unique
 
-  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  answers  Answer[]
-  tags     Tag[]             @relation("QuestionTags")
-  votes    QuestionVote[]
-  comments QuestionComment[]
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers Answer[]
+  tags    Tag[]    @relation("QuestionTags")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -124,6 +120,7 @@ model Question {
   @@index([title])
   @@index([status])
   @@index([createdAt])
+  @@index([slug])
 }
 
 enum QuestionStatus {
@@ -137,43 +134,20 @@ model Answer {
   userId     String
   questionId String
   isAccepted Boolean @default(false)
+  upvotes    Int     @default(0)
+  downvotes  Int     @default(0)
 
-  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  question Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
   votes    AnswerVote[]
-  comments AnswerComment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([questionId])
-}
-
-model QuestionComment {
-  id         String @id @default(cuid())
-  content    String @db.Text
-  userId     String
-  questionId String
-
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model AnswerComment {
-  id       String @id @default(cuid())
-  content  String @db.Text
-  userId   String
-  answerId String
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  answer Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@index([isAccepted])
+  @@index([upvotes])
 }
 
 model Tag {
@@ -183,20 +157,6 @@ model Tag {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model QuestionVote {
-  id         String   @id @default(cuid())
-  userId     String
-  questionId String
-  type       VoteType
-
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@unique([userId, questionId])
 }
 
 model AnswerVote {
