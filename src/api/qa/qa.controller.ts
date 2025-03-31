@@ -17,6 +17,16 @@ export default class QAController {
         this.updateQuestion = this.updateQuestion.bind(this);
         this.deleteQuestion = this.deleteQuestion.bind(this);
         this.adminDeleteQuestion = this.adminDeleteQuestion.bind(this);
+        this.createAnswer = this.createAnswer.bind(this);
+        this.getAnswers = this.getAnswers.bind(this);
+        this.getAnswerById = this.getAnswerById.bind(this);
+        this.updateAnswer = this.updateAnswer.bind(this);
+        this.deleteAnswer = this.deleteAnswer.bind(this);
+        this.adminDeleteAnswer = this.adminDeleteAnswer.bind(this);
+        this.voteAnswer = this.voteAnswer.bind(this);
+        this.acceptAnswer = this.acceptAnswer.bind(this);
+        this.unacceptAnswer = this.unacceptAnswer.bind(this);
+        this.getUserVotes = this.getUserVotes.bind(this);
     }
 
     //  **** Tag methods **** //
@@ -259,6 +269,278 @@ export default class QAController {
                 return;
             }
             next(errorHandler(500, (err as Error).message || "Failed to delete question"));
+        }
+    }
+
+    //  **** Answer methods **** //
+    // Create a new answer
+    async createAnswer(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { content, questionId } = req.body;
+
+            if (!req.user) {
+                return next(errorHandler(401, "Authentication required"));
+            }
+            const userId = req.user.id;
+
+            const answer = await this.qaService.createAnswer({ content, questionId }, userId);
+
+            res.status(201).json({
+                status: "success",
+                statusCode: 201,
+                message: "Answer created successfully",
+                data: { answer }
+            });
+        } catch (err) {
+            if ((err as Error).message === "Question not found") {
+                next(errorHandler(404, "Question not found"));
+                return;
+            }
+            next(errorHandler(500, (err as Error).message || "Failed to create answer"));
+        }
+    }
+
+    // Get all answers (with filters)
+    async getAnswers(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { answers, pagination } = await this.qaService.getAnswers(req.query);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Answers retrieved successfully",
+                data: { answers, pagination }
+            });
+        } catch (err) {
+            next(errorHandler(500, (err as Error).message || "Failed to retrieve answers"));
+        }
+    }
+
+    // Get answer by ID
+    async getAnswerById(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const answer = await this.qaService.getAnswerById(id);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Answer retrieved successfully",
+                data: { answer }
+            });
+        } catch (err) {
+            if ((err as Error).message === "Answer not found") {
+                next(errorHandler(404, "Answer not found"));
+                return;
+            }
+            next(errorHandler(500, (err as Error).message || "Failed to retrieve answer"));
+        }
+    }
+
+    // Update answer
+    async updateAnswer(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const { content } = req.body;
+
+            if (!req.user) {
+                return next(errorHandler(401, "Authentication required"));
+            }
+            const userId = req.user.id;
+
+            const answer = await this.qaService.updateAnswer(id, userId, content);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Answer updated successfully",
+                data: { answer }
+            });
+        } catch (err) {
+            if ((err as Error).message === "Answer not found") {
+                next(errorHandler(404, "Answer not found"));
+                return;
+            }
+            if ((err as Error).message === "You can only update your own answers") {
+                next(errorHandler(403, "You can only update your own answers"));
+                return;
+            }
+            next(errorHandler(500, (err as Error).message || "Failed to update answer"));
+        }
+    }
+
+    // Delete answer
+    async deleteAnswer(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+
+            if (!req.user) {
+                return next(errorHandler(401, "Authentication required"));
+            }
+            const userId = req.user.id;
+            const isAdmin = req.user.role === 'ADMIN';
+
+            await this.qaService.deleteAnswer(id, userId, isAdmin);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Answer deleted successfully"
+            });
+        } catch (err) {
+            if ((err as Error).message === "Answer not found") {
+                next(errorHandler(404, "Answer not found"));
+                return;
+            }
+            if ((err as Error).message === "You can only delete your own answers") {
+                next(errorHandler(403, "You can only delete your own answers"));
+                return;
+            }
+            next(errorHandler(500, (err as Error).message || "Failed to delete answer"));
+        }
+    }
+
+    // Admin method to delete any answer
+    async adminDeleteAnswer(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+
+            if (!req.user) {
+                return next(errorHandler(401, "Authentication required"));
+            }
+
+            await this.qaService.deleteAnswer(id, req.user.id, true);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Answer deleted successfully by admin"
+            });
+        } catch (err) {
+            if ((err as Error).message === "Answer not found") {
+                next(errorHandler(404, "Answer not found"));
+                return;
+            }
+            next(errorHandler(500, (err as Error).message || "Failed to delete answer"));
+        }
+    }
+
+    // Vote on answer
+    async voteAnswer(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { answerId, type } = req.body;
+
+            if (!req.user) {
+                return next(errorHandler(401, "Authentication required"));
+            }
+            const userId = req.user.id;
+
+            const result = await this.qaService.voteAnswer(userId, answerId, type);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: `Vote ${result.action} successfully`,
+                data: result
+            });
+        } catch (err) {
+            if ((err as Error).message === "Answer not found") {
+                next(errorHandler(404, "Answer not found"));
+                return;
+            }
+            next(errorHandler(500, (err as Error).message || "Failed to vote on answer"));
+        }
+    }
+
+    // Accept an answer
+    async acceptAnswer(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { questionId, answerId } = req.body;
+
+            if (!req.user) {
+                return next(errorHandler(401, "Authentication required"));
+            }
+            const userId = req.user.id;
+
+            const answer = await this.qaService.acceptAnswer(questionId, answerId, userId);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Answer accepted successfully",
+                data: { answer }
+            });
+        } catch (err) {
+            if ((err as Error).message === "Question not found") {
+                next(errorHandler(404, "Question not found"));
+                return;
+            }
+            if ((err as Error).message === "Answer not found or does not belong to this question") {
+                next(errorHandler(404, "Answer not found or does not belong to this question"));
+                return;
+            }
+            if ((err as Error).message === "Only the question author can accept an answer") {
+                next(errorHandler(403, "Only the question author can accept an answer"));
+                return;
+            }
+            next(errorHandler(500, (err as Error).message || "Failed to accept answer"));
+        }
+    }
+
+    // Unaccept an answer
+    async unacceptAnswer(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { questionId, answerId } = req.body;
+
+            if (!req.user) {
+                return next(errorHandler(401, "Authentication required"));
+            }
+            const userId = req.user.id;
+
+            const answer = await this.qaService.unacceptAnswer(questionId, answerId, userId);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Answer unaccepted successfully",
+                data: { answer }
+            });
+        } catch (err) {
+            if ((err as Error).message === "Question not found") {
+                next(errorHandler(404, "Question not found"));
+                return;
+            }
+            if ((err as Error).message === "This answer is not currently accepted") {
+                next(errorHandler(400, "This answer is not currently accepted"));
+                return;
+            }
+            if ((err as Error).message === "Only the question author can unaccept an answer") {
+                next(errorHandler(403, "Only the question author can unaccept an answer"));
+                return;
+            }
+            next(errorHandler(500, (err as Error).message || "Failed to unaccept answer"));
+        }
+    }
+
+    // Get user's votes
+    async getUserVotes(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            if (!req.user) {
+                return next(errorHandler(401, "Authentication required"));
+            }
+            const userId = req.user.id;
+            const { questionId, answerId } = req.query as { questionId?: string, answerId?: string };
+
+            const votes = await this.qaService.getUserVotes(userId, questionId, answerId);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "User votes retrieved successfully",
+                data: { votes }
+            });
+        } catch (err) {
+            next(errorHandler(500, (err as Error).message || "Failed to retrieve user votes"));
         }
     }
 }

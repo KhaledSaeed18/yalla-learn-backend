@@ -363,4 +363,497 @@ export class QAService {
 
         return { id };
     }
+
+    //  **** Answer methods **** //
+
+    // Create a new answer
+    public async createAnswer(data: { content: string, questionId: string }, userId: string) {
+        // Check if the question exists
+        const question = await this.prisma.question.findUnique({
+            where: { id: data.questionId }
+        });
+
+        if (!question) {
+            throw new Error("Question not found");
+        }
+
+        // Create the answer
+        const answer = await this.prisma.answer.create({
+            data: {
+                content: data.content,
+                user: { connect: { id: userId } },
+                question: { connect: { id: data.questionId } }
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true
+                    }
+                }
+            }
+        });
+
+        return answer;
+    }
+
+    // Get answers with pagination and filters
+    public async getAnswers(params: {
+        page?: number;
+        limit?: number;
+        questionId?: string;
+        userId?: string;
+        sortBy?: string;
+        sortOrder?: string;
+    }) {
+        const {
+            page = 1,
+            limit = 10,
+            questionId,
+            userId,
+            sortBy = 'createdAt',
+            sortOrder = 'desc'
+        } = params;
+
+        const skip = (page - 1) * limit;
+
+        // Build filter conditions
+        const where: Prisma.AnswerWhereInput = {};
+
+        if (questionId) {
+            where.questionId = questionId;
+        }
+
+        if (userId) {
+            where.userId = userId;
+        }
+
+        // Get total count for pagination
+        const totalAnswers = await this.prisma.answer.count({ where });
+
+        // Get answers
+        const answers = await this.prisma.answer.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: {
+                [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc'
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true
+                    }
+                },
+                _count: {
+                    select: {
+                        votes: true
+                    }
+                }
+            }
+        });
+
+        // Calculate pagination info
+        const totalPages = Math.ceil(totalAnswers / limit);
+        const hasNextPage = page < totalPages;
+        const hasPrevPage = page > 1;
+
+        return {
+            answers,
+            pagination: {
+                totalAnswers,
+                totalPages,
+                currentPage: page,
+                limit,
+                hasNextPage,
+                hasPrevPage
+            }
+        };
+    }
+
+    // Get answers by ID
+    public async getAnswerById(id: string) {
+        const answer = await this.prisma.answer.findUnique({
+            where: { id },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true
+                    }
+                },
+                question: {
+                    select: {
+                        id: true,
+                        title: true,
+                        userId: true
+                    }
+                },
+                _count: {
+                    select: {
+                        votes: true
+                    }
+                }
+            }
+        });
+
+        if (!answer) {
+            throw new Error("Answer not found");
+        }
+
+        return answer;
+    }
+
+    // Update answer
+    public async updateAnswer(id: string, userId: string, content: string) {
+        // Check if answer exists and belongs to user
+        const answer = await this.prisma.answer.findUnique({
+            where: { id }
+        });
+
+        if (!answer) {
+            throw new Error("Answer not found");
+        }
+
+        if (answer.userId !== userId) {
+            throw new Error("You can only update your own answers");
+        }
+
+        // Update the answer
+        const updatedAnswer = await this.prisma.answer.update({
+            where: { id },
+            data: { content },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true
+                    }
+                }
+            }
+        });
+
+        return updatedAnswer;
+    }
+
+    // Delete answer
+    public async deleteAnswer(id: string, userId: string, isAdmin: boolean) {
+        // Check if answer exists
+        const answer = await this.prisma.answer.findUnique({
+            where: { id }
+        });
+
+        if (!answer) {
+            throw new Error("Answer not found");
+        }
+
+        // Only the author or admin can delete
+        if (answer.userId !== userId && !isAdmin) {
+            throw new Error("You can only delete your own answers");
+        }
+
+        // Delete the answer
+        await this.prisma.answer.delete({
+            where: { id }
+        });
+
+        return { id };
+    }
+
+    // Vote on answer (upvote or downvote)
+    public async voteAnswer(userId: string, answerId: string, voteType: 'UPVOTE' | 'DOWNVOTE') {
+        // Check if answer exists
+        const answer = await this.prisma.answer.findUnique({
+            where: { id: answerId }
+        });
+
+        if (!answer) {
+            throw new Error("Answer not found");
+        }
+
+        // Check if user has already voted on this answer
+        const existingVote = await this.prisma.answerVote.findUnique({
+            where: {
+                userId_answerId: {
+                    userId,
+                    answerId
+                }
+            }
+        });
+
+        // Begin transaction to ensure vote counts are updated atomically
+        return await this.prisma.$transaction(async (prisma) => {
+            // If the user has already voted
+            if (existingVote) {
+                // If the same vote type, remove the vote (toggle)
+                if (existingVote.type === voteType) {
+                    await prisma.answerVote.delete({
+                        where: {
+                            userId_answerId: {
+                                userId,
+                                answerId
+                            }
+                        }
+                    });
+
+                    // Update answer vote counts
+                    if (voteType === 'UPVOTE') {
+                        await prisma.answer.update({
+                            where: { id: answerId },
+                            data: {
+                                upvotes: {
+                                    decrement: 1
+                                }
+                            }
+                        });
+                    } else {
+                        await prisma.answer.update({
+                            where: { id: answerId },
+                            data: {
+                                downvotes: {
+                                    decrement: 1
+                                }
+                            }
+                        });
+                    }
+
+                    return {
+                        action: 'removed',
+                        voteType
+                    };
+                }
+                // If different vote type, change the vote
+                else {
+                    await prisma.answerVote.update({
+                        where: {
+                            userId_answerId: {
+                                userId,
+                                answerId
+                            }
+                        },
+                        data: {
+                            type: voteType
+                        }
+                    });
+
+                    // Update answer vote counts (increment new vote type, decrement old vote type)
+                    if (voteType === 'UPVOTE') {
+                        await prisma.answer.update({
+                            where: { id: answerId },
+                            data: {
+                                upvotes: {
+                                    increment: 1
+                                },
+                                downvotes: {
+                                    decrement: 1
+                                }
+                            }
+                        });
+                    } else {
+                        await prisma.answer.update({
+                            where: { id: answerId },
+                            data: {
+                                downvotes: {
+                                    increment: 1
+                                },
+                                upvotes: {
+                                    decrement: 1
+                                }
+                            }
+                        });
+                    }
+
+                    return {
+                        action: 'changed',
+                        voteType
+                    };
+                }
+            }
+            // If no existing vote, create a new vote
+            else {
+                await prisma.answerVote.create({
+                    data: {
+                        type: voteType,
+                        user: { connect: { id: userId } },
+                        answer: { connect: { id: answerId } }
+                    }
+                });
+
+                // Update answer vote counts
+                if (voteType === 'UPVOTE') {
+                    await prisma.answer.update({
+                        where: { id: answerId },
+                        data: {
+                            upvotes: {
+                                increment: 1
+                            }
+                        }
+                    });
+                } else {
+                    await prisma.answer.update({
+                        where: { id: answerId },
+                        data: {
+                            downvotes: {
+                                increment: 1
+                            }
+                        }
+                    });
+                }
+
+                return {
+                    action: 'added',
+                    voteType
+                };
+            }
+        });
+    }
+
+    // Accept an answer for a question
+    public async acceptAnswer(questionId: string, answerId: string, userId: string) {
+        // Check if question exists and belongs to the user
+        const question = await this.prisma.question.findUnique({
+            where: { id: questionId }
+        });
+
+        if (!question) {
+            throw new Error("Question not found");
+        }
+
+        if (question.userId !== userId) {
+            throw new Error("Only the question author can accept an answer");
+        }
+
+        // Check if answer exists and belongs to the question
+        const answer = await this.prisma.answer.findUnique({
+            where: {
+                id: answerId,
+                questionId: questionId
+            }
+        });
+
+        if (!answer) {
+            throw new Error("Answer not found or does not belong to this question");
+        }
+
+        // Begin transaction to handle accepting answer
+        return await this.prisma.$transaction(async (prisma) => {
+            // If there's a previously accepted answer, un-accept it
+            if (question.acceptedAnswerId) {
+                await prisma.answer.update({
+                    where: { id: question.acceptedAnswerId },
+                    data: { isAccepted: false }
+                });
+            }
+
+            // Accept this answer
+            const updatedAnswer = await prisma.answer.update({
+                where: { id: answerId },
+                data: { isAccepted: true },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true
+                        }
+                    }
+                }
+            });
+
+            // Update the question with the accepted answer ID
+            await prisma.question.update({
+                where: { id: questionId },
+                data: {
+                    acceptedAnswerId: answerId,
+                    status: 'CLOSED'
+                }
+            });
+
+            return updatedAnswer;
+        });
+    }
+
+    // Unaccept an answer
+    public async unacceptAnswer(questionId: string, answerId: string, userId: string) {
+        // Check if question exists and belongs to the user
+        const question = await this.prisma.question.findUnique({
+            where: { id: questionId }
+        });
+
+        if (!question) {
+            throw new Error("Question not found");
+        }
+
+        if (question.userId !== userId) {
+            throw new Error("Only the question author can unaccept an answer");
+        }
+
+        // Check if this answer is currently the accepted one
+        if (question.acceptedAnswerId !== answerId) {
+            throw new Error("This answer is not currently accepted");
+        }
+
+        // Begin transaction to handle unaccepting answer
+        return await this.prisma.$transaction(async (prisma) => {
+            // Unaccept this answer
+            const updatedAnswer = await prisma.answer.update({
+                where: { id: answerId },
+                data: { isAccepted: false },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            firstName: true,
+                            lastName: true
+                        }
+                    }
+                }
+            });
+
+            // Update the question to remove the accepted answer ID
+            await prisma.question.update({
+                where: { id: questionId },
+                data: {
+                    acceptedAnswerId: null,
+                    status: 'OPEN'
+                }
+            });
+
+            return updatedAnswer;
+        });
+    }
+
+    // Get user's votes for a specific question's answers (to show which answers the user has voted on)
+    public async getUserVotes(userId: string, questionId?: string, answerId?: string) {
+        const where: Prisma.AnswerVoteWhereInput = { userId };
+
+        if (questionId) {
+            where.answer = { questionId };
+        }
+
+        if (answerId) {
+            where.answerId = answerId;
+        }
+
+        const votes = await this.prisma.answerVote.findMany({
+            where,
+            select: {
+                answerId: true,
+                type: true
+            }
+        });
+
+        // Transform to a more usable format
+        const voteMap: Record<string, 'UPVOTE' | 'DOWNVOTE'> = {};
+        votes.forEach(vote => {
+            voteMap[vote.answerId] = vote.type;
+        });
+
+        return voteMap;
+    }
 }

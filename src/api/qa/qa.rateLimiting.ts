@@ -94,3 +94,12 @@ export const acceptAnswerLimiter = rateLimit({
         next(errorHandler(429, "Too many accept answer attempts, please try again later"));
     }
 });
+
+// Rate limiting for answer retrieval
+export const answerGetLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 200, // 200 requests per 15 minutes
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many answer retrieval attempts, please try again later"));
+    }
+});

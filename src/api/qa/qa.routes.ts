@@ -1,7 +1,7 @@
 import { Router } from "express";
 import QAController from "./qa.controller";
-import { questionCreateLimiter, questionDeleteLimiter, questionGetLimiter, questionUpdateLimiter, tagCreateLimiter, tagDeleteLimiter } from "./qa.rateLimiting";
-import { validateGetQuestionsQuery, validateQuestionCreate, validateTagCreate, validateUpdateQuestion } from "./qa.validation";
+import { acceptAnswerLimiter, answerCreateLimiter, answerDeleteLimiter, answerGetLimiter, answerUpdateLimiter, questionCreateLimiter, questionDeleteLimiter, questionGetLimiter, questionUpdateLimiter, tagCreateLimiter, tagDeleteLimiter, voteLimiter } from "./qa.rateLimiting";
+import { validateAcceptAnswer, validateAnswerCreate, validateAnswerVote, validateGetAnswersQuery, validateGetQuestionsQuery, validateQuestionCreate, validateTagCreate, validateUpdateAnswer, validateUpdateQuestion } from "./qa.validation";
 import { authorize, authorizeAdmin } from "../../middlewares/authorization.middleware";
 import { sanitizeRequestBody } from '../../middlewares/sanitizeBody.middleware';
 
@@ -103,6 +103,96 @@ export default class QARouter {
             authorizeAdmin,
             questionDeleteLimiter,
             this.qaController.adminDeleteQuestion
+        );
+
+        // **** Answer routes ****
+        // Create a new answer
+        this.router.post(
+            "/answers",
+            authorize,
+            answerCreateLimiter,
+            sanitizeRequestBody,
+            validateAnswerCreate,
+            this.qaController.createAnswer
+        );
+
+        // Get answers with pagination and filters
+        this.router.get(
+            "/answers",
+            answerGetLimiter,
+            validateGetAnswersQuery,
+            this.qaController.getAnswers
+        );
+
+        // Get answer by ID
+        this.router.get(
+            "/answers/:id",
+            answerGetLimiter,
+            this.qaController.getAnswerById
+        );
+
+        // Update answer
+        this.router.put(
+            "/answers/:id",
+            authorize,
+            answerUpdateLimiter,
+            sanitizeRequestBody,
+            validateUpdateAnswer,
+            this.qaController.updateAnswer
+        );
+
+        // Delete answer
+        this.router.delete(
+            "/answers/:id",
+            authorize,
+            answerDeleteLimiter,
+            this.qaController.deleteAnswer
+        );
+
+        // Admin route for deleting any answer
+        this.router.delete(
+            "/admin/answers/:id",
+            authorize,
+            authorizeAdmin,
+            answerDeleteLimiter,
+            this.qaController.adminDeleteAnswer
+        );
+
+        // Vote on answer
+        this.router.post(
+            "/answers/vote",
+            authorize,
+            voteLimiter,
+            sanitizeRequestBody,
+            validateAnswerVote,
+            this.qaController.voteAnswer
+        );
+
+        // Accept an answer
+        this.router.post(
+            "/answers/accept",
+            authorize,
+            acceptAnswerLimiter,
+            sanitizeRequestBody,
+            validateAcceptAnswer,
+            this.qaController.acceptAnswer
+        );
+
+        // Unaccept an answer
+        this.router.post(
+            "/answers/unaccept",
+            authorize,
+            acceptAnswerLimiter,
+            sanitizeRequestBody,
+            validateAcceptAnswer,
+            this.qaController.unacceptAnswer
+        );
+
+        // Get user votes
+        this.router.get(
+            "/user/votes",
+            authorize,
+            this.qaController.getUserVotes
         );
     }
 
