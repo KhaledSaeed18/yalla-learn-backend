@@ -13,8 +13,8 @@ export default class AIController {
     }
 
     /**
- * Generate AI chat completion
- */
+    * Generate AI chat completion
+    */
     async chatCompletion(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { messages, maxTokens, temperature } = req.body;

@@ -73,7 +73,7 @@ export class AIService {
 
             // Format messages for Gemini API
             const formattedMessages = messages.map(msg => ({
-                role: msg.role,
+                role: msg.role === 'assistant' ? 'model' : msg.role,
                 parts: [{ text: msg.content }]
             }));
 
@@ -94,9 +94,10 @@ export class AIService {
             const responseText = result.response.text();
 
             // Save the conversation to the database
-            await this.saveConversation(userId, messages, responseText);
+            const conversationId = await this.saveConversation(userId, messages, responseText);
 
             return {
+                conversationId,
                 message: responseText,
                 usage: {
                     promptTokens: this.estimateTokenCount(messages.map(m => m.content).join(' ')),
@@ -151,9 +152,10 @@ export class AIService {
     }
 
     /**
-    * Save a conversation and its messages to the database
-    */
-    private async saveConversation(userId: string, messages: ChatMessage[], response: string) {
+* Save a conversation and its messages to the database
+* @returns The ID of the conversation
+*/
+    private async saveConversation(userId: string, messages: ChatMessage[], response: string): Promise<string> {
         // Create a new conversation if this is the first message
         // or add to an existing conversation
         const latestConversation = await this.prisma.aIConversation.findFirst({
@@ -204,6 +206,8 @@ export class AIService {
                 role: 'assistant'
             }
         });
+
+        return conversationId;
     }
 
     /**
@@ -216,8 +220,8 @@ export class AIService {
     }
 
     /**
-     * Continues an existing conversation with a new message
-     */
+ * Continues an existing conversation with a new message
+ */
     public async continueConversation(
         conversationId: string,
         newMessage: string,
@@ -270,9 +274,9 @@ export class AIService {
                 safetySettings: this.safetySettings
             });
 
-            // Format messages for Gemini API
+            // Format messages for Gemini API - Map 'assistant' role to 'model' for the API
             const formattedMessages = messages.map(msg => ({
-                role: msg.role,
+                role: msg.role === 'assistant' ? 'model' : msg.role,
                 parts: [{ text: msg.content }]
             }));
 
@@ -313,6 +317,7 @@ export class AIService {
             });
 
             return {
+                conversationId,
                 message: responseText,
                 usage: {
                     promptTokens: this.estimateTokenCount(messages.map(m => m.content).join(' ')),
