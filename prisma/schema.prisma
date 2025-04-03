@@ -26,15 +26,16 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  LoginHistory LoginHistory[]
-  BlogPost     BlogPost[]
-  Question     Question[]
-  Answer       Answer[]
-  AnswerVote   AnswerVote[]
-  Listing      Listing[]
-  GigService   GigService[]
-  Board        Board[]
-  Task         Task[]
+  LoginHistory   LoginHistory[]
+  BlogPost       BlogPost[]
+  Question       Question[]
+  Answer         Answer[]
+  AnswerVote     AnswerVote[]
+  Listing        Listing[]
+  GigService     GigService[]
+  Board          Board[]
+  Task           Task[]
+  AIConversation AIConversation[]
 }
 
 enum Role {
@@ -341,4 +342,26 @@ model TaskTag {
   tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([taskId, tagId])
+}
+
+model AIConversation {
+  id        String      @id @default(uuid())
+  userId    String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  messages  AIMessage[]
+  user      User        @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model AIMessage {
+  id             String         @id @default(uuid())
+  conversationId String
+  role           String
+  content        String         @db.Text
+  createdAt      DateTime       @default(now())
+  conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
 }

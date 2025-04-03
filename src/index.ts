@@ -8,6 +8,7 @@ import AuthRouter from './api/auth/auth.routes';
 import BlogRouter from './api/blog/blog.routes';
 import QARouter from './api/qa/qa.routes';
 import KanbanRouter from './api/kanban/kanban.routes';
+import AIRouter from './api/ai/ai.routes';
 
 dotenv.config();
 
@@ -51,6 +52,10 @@ app.use(`${baseUrl}/qa`, qaRouter.getRouter());
 // Kanban routes
 const kanbanRouter = new KanbanRouter();
 app.use(`${baseUrl}/kanban`, kanbanRouter.getRouter());
+
+// AI routes
+const aiRouter = new AIRouter();
+app.use(`${baseUrl}/ai`, aiRouter.getRouter());
 
 // 404 error handler
 app.use((_req: Request, res: Response) => {
