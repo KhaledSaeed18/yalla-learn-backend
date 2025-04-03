@@ -111,6 +111,229 @@ export class AIService {
     }
 
     /**
+     * Creates a streaming chat completion with the Gemini model
+     */
+    public async createStreamingChatCompletion(
+        messages: ChatMessage[],
+        userId: string,
+        options: ChatCompletionOptions = {}
+    ) {
+        try {
+            // Validate userId
+            if (!userId) {
+                throw new Error('userId is required for chat completion');
+            }
+
+            // Configure model settings
+            const model = this.genAI.getGenerativeModel({
+                model: 'gemini-1.5-pro',
+                safetySettings: this.safetySettings
+            });
+
+            // Format messages for Gemini API
+            const formattedMessages = messages.map(msg => ({
+                role: msg.role === 'assistant' ? 'model' : msg.role,
+                parts: [{ text: msg.content }]
+            }));
+
+            // Create a chat session
+            const chat = model.startChat({
+                history: formattedMessages.slice(0, -1),
+                generationConfig: {
+                    maxOutputTokens: options.maxTokens || 1024,
+                    temperature: options.temperature || 0.7,
+                },
+            });
+
+            // Get the last message (the prompt to respond to)
+            const lastMessage = messages[messages.length - 1];
+
+            // Generate the response as a stream
+            const streamingResponse = await chat.sendMessageStream(lastMessage.content);
+
+            // Save the conversation in the background after streaming starts
+            // We'll need to collect the full response for saving
+            const fullResponsePromise = this.collectStreamResponse(streamingResponse.stream, userId, messages);
+
+            return {
+                stream: streamingResponse.stream,
+                conversationPromise: fullResponsePromise
+            };
+        } catch (error) {
+            console.error('Error in AI streaming completion:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Collects the full response from a stream and saves the conversation
+     * @private
+     */
+    private async collectStreamResponse(
+        stream: AsyncIterable<{ text: () => string }>,
+        userId: string,
+        messages: ChatMessage[]
+    ): Promise<{ conversationId: string, fullResponse: string }> {
+        try {
+            let fullResponse = '';
+
+            // Collect the full response from the stream
+            for await (const chunk of stream) {
+                fullResponse += chunk.text();
+            }
+
+            // Save the conversation to the database
+            const conversationId = await this.saveConversation(userId, messages, fullResponse);
+
+            return {
+                conversationId,
+                fullResponse
+            };
+        } catch (error) {
+            console.error('Error collecting stream response:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Continue an existing conversation with streaming response
+     */
+    public async continueConversationStream(
+        conversationId: string,
+        newMessage: string,
+        userId: string,
+        options: ChatCompletionOptions = {}
+    ) {
+        try {
+            // Validate parameters
+            if (!conversationId) {
+                throw new Error('conversationId is required to continue a conversation');
+            }
+            if (!userId) {
+                throw new Error('userId is required for chat completion');
+            }
+
+            // Verify the conversation exists and belongs to this user
+            const conversation = await this.prisma.aIConversation.findFirst({
+                where: {
+                    id: conversationId,
+                    userId
+                },
+                include: {
+                    messages: {
+                        orderBy: {
+                            createdAt: 'asc'
+                        }
+                    }
+                }
+            });
+
+            if (!conversation) {
+                throw new Error('Conversation not found or does not belong to this user');
+            }
+
+            // Format previous messages for the API
+            const messages: ChatMessage[] = conversation.messages.map(msg => ({
+                role: msg.role as 'user' | 'assistant',
+                content: msg.content
+            }));
+
+            // Add the new message
+            messages.push({
+                role: 'user',
+                content: newMessage
+            });
+
+            // Configure model settings
+            const model = this.genAI.getGenerativeModel({
+                model: 'gemini-1.5-pro',
+                safetySettings: this.safetySettings
+            });
+
+            // Format messages for Gemini API
+            const formattedMessages = messages.map(msg => ({
+                role: msg.role === 'assistant' ? 'model' : msg.role,
+                parts: [{ text: msg.content }]
+            }));
+
+            // Create a chat session
+            const chat = model.startChat({
+                history: formattedMessages.slice(0, -1),
+                generationConfig: {
+                    maxOutputTokens: options.maxTokens || 1024,
+                    temperature: options.temperature || 0.7,
+                },
+            });
+
+            // Get the response to the new message as a stream
+            const streamingResponse = await chat.sendMessageStream(newMessage);
+
+            // Process and save the response in the background
+            const savePromise = this.saveStreamingContinuation(
+                streamingResponse.stream,
+                conversationId,
+                newMessage
+            );
+
+            return {
+                stream: streamingResponse.stream,
+                conversationId,
+                savePromise
+            };
+        } catch (error) {
+            console.error('Error in streaming conversation continuation:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Save the streamed continuation messages
+     * @private
+     */
+    private async saveStreamingContinuation(
+        stream: AsyncIterable<{ text: () => string }>,
+        conversationId: string,
+        userMessage: string
+    ): Promise<string> {
+        try {
+            // First save the user message
+            await this.prisma.aIMessage.create({
+                data: {
+                    conversationId,
+                    content: userMessage,
+                    role: 'user'
+                }
+            });
+
+            // Collect the full response
+            let fullResponse = '';
+            for await (const chunk of stream) {
+                fullResponse += chunk.text();
+            }
+
+            // Save the assistant's response
+            await this.prisma.aIMessage.create({
+                data: {
+                    conversationId,
+                    content: fullResponse,
+                    role: 'assistant'
+                }
+            });
+
+            // Update the conversation timestamp
+            await this.prisma.aIConversation.update({
+                where: { id: conversationId },
+                data: { updatedAt: new Date() }
+            });
+
+            return fullResponse;
+        } catch (error) {
+            console.error('Error saving streaming continuation:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Get conversation history for a user
      */
     public async getConversationHistory(userId: string, limit: number = 10, page: number = 1) {
@@ -214,7 +437,7 @@ export class AIService {
      * Simple token count estimator
      * This is a very rough approximation - in production, use a proper tokenizer
      */
-    private estimateTokenCount(text: string): number {
+    public estimateTokenCount(text: string): number {
         // Rough approximation: 1 token ≈ 4 characters
         return Math.ceil(text.length / 4);
     }

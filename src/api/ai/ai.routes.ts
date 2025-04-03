@@ -44,6 +44,24 @@ export default class AIRouter {
             validateContinueConversation,
             this.aiController.continueConversation
         );
+
+        this.router.post(
+            "/chat/stream",
+            authorize,
+            chatCompletionLimiter,
+            sanitizeRequestBody,
+            validateChatCompletion,
+            this.aiController.streamChatCompletion
+        );
+
+        this.router.post(
+            "/continue/stream",
+            authorize,
+            continueChatLimiter,
+            sanitizeRequestBody,
+            validateContinueConversation,
+            this.aiController.streamContinueConversation
+        );
     }
 
     // Returns the router object
