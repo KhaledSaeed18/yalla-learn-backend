@@ -60,6 +60,58 @@ export const createListingValidation: ValidationChain[] = [
         }),
 ];
 
+export const updateListingValidation: ValidationChain[] = [
+    body('title')
+        .optional()
+        .isString()
+        .withMessage('Title must be a string')
+        .isLength({ min: 3, max: 100 })
+        .withMessage('Title must be between 3 and 100 characters'),
+
+    body('description')
+        .optional()
+        .isString()
+        .withMessage('Description must be a string')
+        .isLength({ min: 10, max: 2000 })
+        .withMessage('Description must be between 10 and 2000 characters'),
+
+    body('price')
+        .optional()
+        .isFloat({ min: 0 })
+        .withMessage('Price must be a positive number'),
+
+    body('condition')
+        .optional()
+        .isIn(Object.values(Condition))
+        .withMessage('Invalid condition value'),
+
+    body('category')
+        .optional()
+        .isIn(Object.values(ListingCategory))
+        .withMessage('Invalid category value'),
+
+    body('images')
+        .optional()
+        .isArray()
+        .withMessage('Images must be an array'),
+
+    body('isRentable')
+        .optional()
+        .isBoolean()
+        .withMessage('isRentable must be a boolean'),
+
+    body('rentalPeriod')
+        .optional()
+        .isInt({ min: 1 })
+        .withMessage('Rental period must be a positive integer')
+        .custom((value, { req }) => {
+            if (req.body.isRentable && !value) {
+                throw new Error('Rental period is required when listing is rentable');
+            }
+            return true;
+        }),
+];
+
 // Get listings query params schema
 const getListingsQuerySchema = z.object({
     page: z.string()

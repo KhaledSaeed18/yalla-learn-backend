@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { ListingController } from './listings.controller';
 import { authorize, authorizeAdmin } from '../../middlewares/authorization.middleware';
-import { createListingValidation, validateGetListingsQuery } from './listings.validation';
-import { createListingLimiter, listingGetLimiter, listingAdminGetLimiter } from './listings.rateLimiting';
+import { createListingValidation, updateListingValidation, validateGetListingsQuery } from './listings.validation';
+import { createListingLimiter, listingGetLimiter, listingAdminGetLimiter, listingUpdateLimiter, listingDeleteLimiter } from './listings.rateLimiting';
 import { sanitizeRequestBody } from '../../middlewares/sanitizeBody.middleware';
 
 export default class ListingRouter {
@@ -50,6 +50,33 @@ export default class ListingRouter {
             listingGetLimiter,
             validateGetListingsQuery,
             this.listingController.getUserListings
+        );
+
+        // Update a listing
+        this.router.put(
+            '/:id',
+            authorize,
+            listingUpdateLimiter,
+            sanitizeRequestBody,
+            updateListingValidation,
+            this.listingController.updateListing
+        );
+
+        // Delete a listing
+        this.router.delete(
+            '/:id',
+            authorize,
+            listingDeleteLimiter,
+            this.listingController.deleteListing
+        );
+
+        // Admin delete any listing
+        this.router.delete(
+            '/admin/:id',
+            authorize,
+            authorizeAdmin,
+            listingDeleteLimiter,
+            this.listingController.adminDeleteListing
         );
     }
 

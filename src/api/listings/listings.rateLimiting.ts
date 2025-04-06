@@ -27,3 +27,19 @@ export const listingAdminGetLimiter = rateLimit({
         next(errorHandler(429, "Too many admin listing retrieval attempts, please try again later"));
     }
 });
+
+export const listingUpdateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many listing update attempts, please try again later"));
+    }
+});
+
+export const listingDeleteLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many listing deletion attempts, please try again later"));
+    }
+});

@@ -214,4 +214,65 @@ export class ListingService {
             }
         };
     }
+
+    async updateListing(id: string, userId: string, updateData: Partial<CreateListingDTO>): Promise<Listing> {
+        // First check if the listing exists and belongs to the user
+        const listing = await this.prisma.listing.findUnique({
+            where: { id }
+        });
+
+        if (!listing) {
+            throw new Error('Listing not found');
+        }
+
+        if (listing.userId !== userId) {
+            throw new Error('Unauthorized - You can only update your own listings');
+        }
+
+        // Update the listing
+        return this.prisma.listing.update({
+            where: { id },
+            data: updateData
+        });
+    }
+
+    async deleteListing(id: string, userId: string): Promise<{ id: string }> {
+        // First check if the listing exists and belongs to the user
+        const listing = await this.prisma.listing.findUnique({
+            where: { id }
+        });
+
+        if (!listing) {
+            throw new Error('Listing not found');
+        }
+
+        if (listing.userId !== userId) {
+            throw new Error('Unauthorized - You can only delete your own listings');
+        }
+
+        // Delete the listing
+        await this.prisma.listing.delete({
+            where: { id }
+        });
+
+        return { id };
+    }
+
+    async adminDeleteListing(id: string): Promise<{ id: string }> {
+        // First check if the listing exists
+        const listing = await this.prisma.listing.findUnique({
+            where: { id }
+        });
+
+        if (!listing) {
+            throw new Error('Listing not found');
+        }
+
+        // Delete the listing as admin
+        await this.prisma.listing.delete({
+            where: { id }
+        });
+
+        return { id };
+    }
 }
