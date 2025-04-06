@@ -33,11 +33,9 @@ export default class ListingRouter {
             this.listingController.getListingById
         );
 
-        // Get all listings (admin only)
+        // Get all listings
         this.router.get(
-            '/admin/get-listings',
-            authorize,
-            authorizeAdmin,
+            '/get-listings',
             listingAdminGetLimiter,
             validateGetListingsQuery,
             this.listingController.getAllListings
