@@ -78,6 +78,15 @@ export default class ListingRouter {
             listingDeleteLimiter,
             this.listingController.adminDeleteListing
         );
+
+        // Get listing statistics for admin dashboard
+        this.router.get(
+            '/admin/statistics',
+            authorize,
+            authorizeAdmin,
+            listingGetLimiter,
+            this.listingController.getListingStatistics
+        );
     }
 
     // Returns the router object

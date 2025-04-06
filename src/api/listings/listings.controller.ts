@@ -15,6 +15,7 @@ export class ListingController {
         this.updateListing = this.updateListing.bind(this);
         this.deleteListing = this.deleteListing.bind(this);
         this.adminDeleteListing = this.adminDeleteListing.bind(this);
+        this.getListingStatistics = this.getListingStatistics.bind(this);
     }
 
     createListing = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -229,6 +230,22 @@ export class ListingController {
                 return;
             }
             next(errorHandler(500, (err as Error).message || "Failed to delete listing"));
+        }
+    };
+
+    // Get listing statistics for admin dashboard
+    getListingStatistics = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const statistics = await this.listingService.getListingStatistics();
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Listing statistics retrieved successfully",
+                data: { statistics }
+            });
+        } catch (err) {
+            next(errorHandler(500, (err as Error).message || "Failed to retrieve listing statistics"));
         }
     };
 }

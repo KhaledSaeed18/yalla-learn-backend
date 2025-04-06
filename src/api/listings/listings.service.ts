@@ -275,4 +275,133 @@ export class ListingService {
 
         return { id };
     }
+
+    // Get listing statistics for admin dashboard
+    async getListingStatistics() {
+        // Total number of listings
+        const totalListings = await this.prisma.listing.count();
+
+        // Listings by category
+        const categoryDistribution = await Promise.all(
+            Object.values(ListingCategory).map(async (category) => {
+                const count = await this.prisma.listing.count({
+                    where: { category }
+                });
+                return { category, count };
+            })
+        );
+
+        // Listings by condition
+        const conditionDistribution = await Promise.all(
+            Object.values(Condition).map(async (condition) => {
+                const count = await this.prisma.listing.count({
+                    where: { condition }
+                });
+                return { condition, count };
+            })
+        );
+
+        // Rentable vs. sellable listings
+        const rentableListings = await this.prisma.listing.count({
+            where: { isRentable: true }
+        });
+
+        const sellOnlyListings = await this.prisma.listing.count({
+            where: { isRentable: false }
+        });
+
+        // Most active sellers (top 5)
+        const topSellers = await this.prisma.user.findMany({
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                _count: {
+                    select: { Listing: true }
+                }
+            },
+            orderBy: {
+                Listing: { _count: 'desc' }
+            },
+            take: 5
+        });
+
+        // Listings created in the last 7 days
+        const lastWeekListings = await this.prisma.listing.count({
+            where: {
+                createdAt: {
+                    gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                }
+            }
+        });
+
+        // Listings created in the last 30 days
+        const lastMonthListings = await this.prisma.listing.count({
+            where: {
+                createdAt: {
+                    gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                }
+            }
+        });
+
+        // Recent listings (last 5 created or updated)
+        const recentListings = await this.prisma.listing.findMany({
+            select: {
+                id: true,
+                title: true,
+                category: true,
+                condition: true,
+                price: true,
+                createdAt: true,
+                updatedAt: true,
+                user: {
+                    select: {
+                        firstName: true,
+                        lastName: true
+                    }
+                }
+            },
+            orderBy: { updatedAt: 'desc' },
+            take: 5
+        });
+
+        // Price statistics
+        const priceStats = await this.prisma.$queryRaw<[{ avg: number, min: number, max: number }]>`
+            SELECT 
+                AVG(price) as avg,
+                MIN(price) as min,
+                MAX(price) as max
+            FROM "Listing"
+            WHERE price IS NOT NULL
+        `;
+
+        const averagePrice = priceStats[0]?.avg ? Number(priceStats[0].avg.toFixed(2)) : 0;
+        const minPrice = priceStats[0]?.min ? Number(priceStats[0].min) : 0;
+        const maxPrice = priceStats[0]?.max ? Number(priceStats[0].max) : 0;
+
+        return {
+            totalListings,
+            categoryDistribution,
+            conditionDistribution,
+            listingTypes: {
+                rentable: rentableListings,
+                sellOnly: sellOnlyListings
+            },
+            topSellers: topSellers.map(seller => ({
+                id: seller.id,
+                name: `${seller.firstName} ${seller.lastName}`,
+                listingCount: seller._count.Listing
+            })),
+            recentActivity: {
+                lastWeekListings,
+                lastMonthListings,
+                recentListings
+            },
+            priceMetrics: {
+                averagePrice,
+                minPrice,
+                maxPrice
+            }
+        };
+    }
 }
