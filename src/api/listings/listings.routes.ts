@@ -5,43 +5,56 @@ import { createListingValidation, validateGetListingsQuery } from './listings.va
 import { createListingLimiter, listingGetLimiter, listingAdminGetLimiter } from './listings.rateLimiting';
 import { sanitizeRequestBody } from '../../middlewares/sanitizeBody.middleware';
 
-const router = Router();
-const listingController = new ListingController();
+export default class ListingRouter {
+    private router: Router;
+    private listingController: ListingController;
 
-// Create a new listing
-router.post(
-    '/add',
-    authorize,
-    createListingLimiter,
-    sanitizeRequestBody,
-    createListingValidation,
-    listingController.createListing
-);
+    constructor() {
+        this.router = Router();
+        this.listingController = new ListingController();
+        this.initRoutes();
+    }
 
-// Get a listing by ID
-router.get(
-    '/:id',
-    listingGetLimiter,
-    listingController.getListingById
-);
+    private initRoutes(): void {
+        // Create a new listing
+        this.router.post(
+            '/add',
+            authorize,
+            createListingLimiter,
+            sanitizeRequestBody,
+            createListingValidation,
+            this.listingController.createListing
+        );
 
-// Get all listings (admin only)
-router.get(
-    '/admin/all',
-    authorize,
-    authorizeAdmin,
-    listingAdminGetLimiter,
-    validateGetListingsQuery,
-    listingController.getAllListings
-);
+        // Get a listing by ID
+        this.router.get(
+            '/:id',
+            listingGetLimiter,
+            this.listingController.getListingById
+        );
 
-// Get user's own listings
-router.get(
-    '/user/my-listings',
-    authorize,
-    listingGetLimiter,
-    validateGetListingsQuery,
-    listingController.getUserListings
-);
+        // Get all listings (admin only)
+        this.router.get(
+            '/admin/all',
+            authorize,
+            authorizeAdmin,
+            listingAdminGetLimiter,
+            validateGetListingsQuery,
+            this.listingController.getAllListings
+        );
 
-export default router;
+        // Get user's own listings
+        this.router.get(
+            '/user/my-listings',
+            authorize,
+            listingGetLimiter,
+            validateGetListingsQuery,
+            this.listingController.getUserListings
+        );
+    }
+
+    // Returns the router object
+    public getRouter(): Router {
+        return this.router;
+    }
+}
