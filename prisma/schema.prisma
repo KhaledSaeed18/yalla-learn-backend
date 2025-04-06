@@ -8,12 +8,17 @@ datasource db {
 }
 
 model User {
-  id                  String    @id @default(cuid())
-  firstName           String
-  lastName            String
-  email               String    @unique
-  password            String
-  role                Role      @default(USER)
+  id          String  @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String  @unique
+  password    String
+  role        Role    @default(USER)
+  bio         String? @db.Text
+  location    String?
+  phoneNumber String?
+  avatar      String?
+
   verificationCode    String?
   codeExpiry          DateTime?
   isVerified          Boolean   @default(false)
