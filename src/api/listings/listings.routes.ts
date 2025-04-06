@@ -28,14 +28,14 @@ export default class ListingRouter {
 
         // Get a listing by ID
         this.router.get(
-            '/:id',
+            '/get-listing/:id',
             listingGetLimiter,
             this.listingController.getListingById
         );
 
         // Get all listings (admin only)
         this.router.get(
-            '/admin/all',
+            '/admin/get-listings',
             authorize,
             authorizeAdmin,
             listingAdminGetLimiter,
@@ -54,7 +54,7 @@ export default class ListingRouter {
 
         // Update a listing
         this.router.put(
-            '/:id',
+            '/update-listing/:id',
             authorize,
             listingUpdateLimiter,
             sanitizeRequestBody,
@@ -64,7 +64,7 @@ export default class ListingRouter {
 
         // Delete a listing
         this.router.delete(
-            '/:id',
+            '/delete-listing/:id',
             authorize,
             listingDeleteLimiter,
             this.listingController.deleteListing
@@ -72,7 +72,7 @@ export default class ListingRouter {
 
         // Admin delete any listing
         this.router.delete(
-            '/admin/:id',
+            '/admin/delete-listing/:id',
             authorize,
             authorizeAdmin,
             listingDeleteLimiter,
