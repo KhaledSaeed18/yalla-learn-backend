@@ -379,13 +379,13 @@ export class BlogService {
 
     // Get a blog post by id or slug
     public async getBlogPostByIdOrSlug(idOrSlug: string) {
-        // Check if the parameter is a slug or an id
-        const isSlug = !idOrSlug.includes('-');
-
         const post = await this.prisma.blogPost.findFirst({
-            where: isSlug
-                ? { id: idOrSlug }
-                : { slug: idOrSlug },
+            where: {
+                OR: [
+                    { id: idOrSlug },
+                    { slug: idOrSlug }
+                ]
+            },
             include: {
                 categories: true,
                 user: {
@@ -397,11 +397,11 @@ export class BlogService {
                 }
             }
         });
-
+    
         if (!post) {
             throw new Error("Blog post not found");
         }
-
+    
         return post;
     }
 
