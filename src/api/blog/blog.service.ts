@@ -392,7 +392,10 @@ export class BlogService {
                     select: {
                         id: true,
                         firstName: true,
-                        lastName: true
+                        lastName: true,
+                        avatar: true,
+                        bio: true,
+                        location: true
                     }
                 }
             }
