@@ -1,29 +1,7 @@
 import { Router } from 'express';
 import KanbanController from './kanban.controller';
-import {
-    createBoardValidation,
-    updateBoardValidation,
-    boardIdValidation,
-    createColumnValidation,
-    updateColumnValidation,
-    columnIdValidation,
-    createTaskValidation,
-    updateTaskValidation,
-    taskIdValidation
-} from './kanban.validation';
-import {
-    boardCreateLimiter,
-    boardGetLimiter,
-    boardUpdateLimiter,
-    boardDeleteLimiter,
-    columnCreateLimiter,
-    columnUpdateLimiter,
-    columnDeleteLimiter,
-    taskCreateLimiter,
-    taskGetLimiter,
-    taskUpdateLimiter,
-    taskDeleteLimiter
-} from './kanban.rateLimiting';
+import { createBoardValidation, updateBoardValidation, boardIdValidation, createColumnValidation, updateColumnValidation, columnIdValidation, createTaskValidation, updateTaskValidation, taskIdValidation } from './kanban.validation';
+import { boardCreateLimiter, boardGetLimiter, boardUpdateLimiter, boardDeleteLimiter, columnCreateLimiter, columnUpdateLimiter, columnDeleteLimiter, taskCreateLimiter, taskGetLimiter, taskUpdateLimiter, taskDeleteLimiter } from './kanban.rateLimiting';
 import { authorize } from '../../middlewares/authorization.middleware';
 
 export default class KanbanRouter {
@@ -39,7 +17,7 @@ export default class KanbanRouter {
     private initRoutes(): void {
         // Board routes
         this.router.post(
-            '/boards',
+            '/create-board',
             authorize,
             boardCreateLimiter,
             createBoardValidation,
@@ -47,14 +25,14 @@ export default class KanbanRouter {
         );
 
         this.router.get(
-            '/boards',
+            '/get-boards',
             authorize,
             boardGetLimiter,
             this.kanbanController.getBoards
         );
 
         this.router.get(
-            '/boards/:id',
+            '/get-board/:id',
             authorize,
             boardGetLimiter,
             boardIdValidation,
@@ -62,7 +40,7 @@ export default class KanbanRouter {
         );
 
         this.router.put(
-            '/boards/:id',
+            '/update-board/:id',
             authorize,
             boardUpdateLimiter,
             updateBoardValidation,
@@ -70,7 +48,7 @@ export default class KanbanRouter {
         );
 
         this.router.delete(
-            '/boards/:id',
+            '/delete-board/:id',
             authorize,
             boardDeleteLimiter,
             boardIdValidation,
@@ -79,7 +57,7 @@ export default class KanbanRouter {
 
         // Column routes
         this.router.post(
-            '/boards/:boardId/columns',
+            '/boards/:boardId/create-column',
             authorize,
             columnCreateLimiter,
             createColumnValidation,
@@ -87,7 +65,7 @@ export default class KanbanRouter {
         );
 
         this.router.put(
-            '/columns/:id',
+            '/update-column/:id',
             authorize,
             columnUpdateLimiter,
             updateColumnValidation,
@@ -95,7 +73,7 @@ export default class KanbanRouter {
         );
 
         this.router.delete(
-            '/columns/:id',
+            '/delete-column/:id',
             authorize,
             columnDeleteLimiter,
             columnIdValidation,
@@ -104,7 +82,7 @@ export default class KanbanRouter {
 
         // Task routes
         this.router.post(
-            '/columns/:columnId/tasks',
+            '/column/:columnId/create-task',
             authorize,
             taskCreateLimiter,
             createTaskValidation,
@@ -112,7 +90,7 @@ export default class KanbanRouter {
         );
 
         this.router.get(
-            '/tasks/:id',
+            '/get-task/:id',
             authorize,
             taskGetLimiter,
             taskIdValidation,
@@ -120,7 +98,7 @@ export default class KanbanRouter {
         );
 
         this.router.put(
-            '/tasks/:id',
+            '/update-task/:id',
             authorize,
             taskUpdateLimiter,
             updateTaskValidation,
@@ -128,7 +106,7 @@ export default class KanbanRouter {
         );
 
         this.router.delete(
-            '/tasks/:id',
+            '/delete-task/:id',
             authorize,
             taskDeleteLimiter,
             taskIdValidation,
