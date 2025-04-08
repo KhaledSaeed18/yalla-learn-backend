@@ -164,7 +164,13 @@ export class AuthService {
             id: user.id,
             email: user.email,
             firstName: user.firstName,
-            lastName: user.lastName
+            lastName: user.lastName,
+            role: user.role,
+            isVerified: user.isVerified,
+            totpEnabled: user.totpEnabled,
+            avatar: user.avatar,
+            bio: user.bio,
+            location: user.location
           }
         }
       };
@@ -188,7 +194,10 @@ export class AuthService {
           email: user.email,
           role: user.role,
           isVerified: user.isVerified,
-          totpEnabled: user.totpEnabled
+          totpEnabled: user.totpEnabled,
+          avatar: user.avatar,
+          bio: user.bio,
+          location: user.location
         },
         accessToken,
         refreshToken,
