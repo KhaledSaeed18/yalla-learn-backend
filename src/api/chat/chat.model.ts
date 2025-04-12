@@ -10,8 +10,16 @@ export interface IConversation extends Document {
 
 const ConversationSchema: Schema = new Schema(
     {
-        listingId: { type: String, required: true },
-        participants: [{ type: String, required: true }],
+        listingId: {
+            type: String,
+            required: true
+        },
+        participants: [
+            {
+                type: String,
+                required: true
+            }
+        ],
     },
     { timestamps: true }
 );
@@ -27,10 +35,23 @@ export interface IMessage extends Document {
 
 const MessageSchema: Schema = new Schema(
     {
-        conversationId: { type: Schema.Types.ObjectId, ref: 'Conversation', required: true },
-        senderId: { type: String, required: true },
-        content: { type: String, required: true },
-        read: { type: Boolean, default: false }
+        conversationId: {
+            type: Schema.Types.ObjectId,
+            ref: 'Conversation',
+            required: true
+        },
+        senderId: {
+            type: String,
+            required: true
+        },
+        content: {
+            type: String,
+            required: true
+        },
+        read: {
+            type: Boolean,
+            default: false
+        }
     },
     { timestamps: true }
 );

@@ -5,6 +5,7 @@ import { ErrorMiddleware } from './middlewares/error.middleware';
 import { securityHeaders } from './middlewares/securityHeaders.middleware';
 import http from 'http';
 import { connectMongoDB } from './config/mongodb';
+import { SocketService } from './socket/chat/socket.service';
 
 import AuthRouter from './api/auth/auth.routes';
 import BlogRouter from './api/blog/blog.routes';
@@ -13,7 +14,6 @@ import KanbanRouter from './api/kanban/kanban.routes';
 import AIRouter from './api/ai/ai.routes';
 import ListingRouter from './api/listings/listings.routes';
 import ChatRouter from './api/chat/chat.routes';
-import { SocketService } from './socket/chat/socket.service';
 
 dotenv.config();
 
