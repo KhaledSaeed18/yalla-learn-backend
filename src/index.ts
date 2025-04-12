@@ -87,12 +87,10 @@ app.use((_req: Request, res: Response) => {
 // Error handling middleware
 app.use(ErrorMiddleware.handleError);
 
-// Connect to MongoDB first, then start the server
-connectMongoDB().then(() => {
-    server.listen(port, () => {
-        console.log(`Server is running on: http://localhost:${port}`);
-    });
-}).catch(err => {
-    console.error('Failed to connect to MongoDB', err);
-    process.exit(1);
+// start the server
+server.listen(port, () => {
+    console.log(`Server is running on: http://localhost:${port}`);
 });
+
+// Connect to MongoDB
+connectMongoDB()
