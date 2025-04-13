@@ -44,13 +44,14 @@ model User {
   Interview      Interview[]
 
   // Expense tracker relations
-  Expense            Expense[]
-  Income             Income[]
-  Budget             Budget[]
-  ExpenseCategory    ExpenseCategory[]
-  SavingsGoal        SavingsGoal[]
-  PaymentSchedule    PaymentSchedule[]
-  Semester           Semester[]
+  Expense         Expense[]
+  Income          Income[]
+  Budget          Budget[]
+  ExpenseCategory ExpenseCategory[]
+  SavingsGoal     SavingsGoal[]
+  PaymentSchedule PaymentSchedule[]
+  Semester        Semester[]
+  Report          Report[]
 }
 
 enum Role {
@@ -427,43 +428,43 @@ enum InterviewStatus {
 }
 
 model ExpenseCategory {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   description String?
   icon        String?
   userId      String
-  isDefault   Boolean  @default(false)
+  isDefault   Boolean @default(false)
   color       String?
-  
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expenses        Expense[]
-  budgets         Budget[]
-  
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+  budgets  Budget[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@unique([name, userId])
   @@index([userId])
 }
 
 model Expense {
-  id          String   @id @default(cuid())
-  amount      Decimal  @db.Decimal(10, 2)
-  description String?
-  date        DateTime
-  categoryId  String
-  userId      String
+  id            String         @id @default(cuid())
+  amount        Decimal        @db.Decimal(10, 2)
+  description   String?
+  date          DateTime
+  categoryId    String
+  userId        String
   paymentMethod PaymentMethod?
-  location    String?
-  semesterId  String?
-  
-  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category    ExpenseCategory @relation(fields: [categoryId], references: [id])
-  semester    Semester?       @relation(fields: [semesterId], references: [id])
-  
+  location      String?
+  semesterId    String?
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category ExpenseCategory @relation(fields: [categoryId], references: [id])
+  semester Semester?       @relation(fields: [semesterId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([userId])
   @@index([categoryId])
   @@index([date])
@@ -478,33 +479,33 @@ model Income {
   date        DateTime
   userId      String
   recurring   Boolean  @default(false)
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([userId])
   @@index([date])
 }
 
 model Budget {
-  id          String   @id @default(cuid())
-  amount      Decimal  @db.Decimal(10, 2)
-  period      BudgetPeriod
-  startDate   DateTime
-  endDate     DateTime?
-  categoryId  String
-  userId      String
-  semesterId  String?
-  
-  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category    ExpenseCategory @relation(fields: [categoryId], references: [id])
-  semester    Semester?       @relation(fields: [semesterId], references: [id])
-  
+  id         String       @id @default(cuid())
+  amount     Decimal      @db.Decimal(10, 2)
+  period     BudgetPeriod
+  startDate  DateTime
+  endDate    DateTime?
+  categoryId String
+  userId     String
+  semesterId String?
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category ExpenseCategory @relation(fields: [categoryId], references: [id])
+  semester Semester?       @relation(fields: [semesterId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([userId])
   @@index([categoryId])
   @@index([semesterId])
@@ -529,23 +530,23 @@ enum PaymentMethod {
 }
 
 model Semester {
-  id          String   @id @default(cuid())
-  name        String
-  startDate   DateTime
-  endDate     DateTime
-  year        Int
-  term        Term
-  isActive    Boolean  @default(false)
-  userId      String
-  
-  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  year      Int
+  term      Term
+  isActive  Boolean  @default(false)
+  userId    String
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   expenses         Expense[]
   budgets          Budget[]
   paymentSchedules PaymentSchedule[]
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([userId])
   @@index([isActive])
 }
@@ -557,23 +558,23 @@ enum Term {
 }
 
 model PaymentSchedule {
-  id          String          @id @default(cuid())
+  id          String                @id @default(cuid())
   name        String
-  amount      Decimal         @db.Decimal(10, 2)
+  amount      Decimal               @db.Decimal(10, 2)
   dueDate     DateTime
-  isPaid      Boolean         @default(false)
+  isPaid      Boolean               @default(false)
   paidDate    DateTime?
   semesterId  String
   userId      String
   paymentType UniversityPaymentType
   notes       String?
-  
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  semester    Semester  @relation(fields: [semesterId], references: [id], onDelete: Cascade)
-  
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  semester Semester @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([userId])
   @@index([semesterId])
   @@index([dueDate])
@@ -594,20 +595,47 @@ enum UniversityPaymentType {
 }
 
 model SavingsGoal {
-  id          String   @id @default(cuid())
-  name        String
-  targetAmount Decimal  @db.Decimal(10, 2)
-  currentAmount Decimal @db.Decimal(10, 2) @default(0)
-  startDate   DateTime @default(now())
-  targetDate  DateTime?
-  isCompleted Boolean  @default(false)
-  userId      String
-  
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id            String    @id @default(cuid())
+  name          String
+  targetAmount  Decimal   @db.Decimal(10, 2)
+  currentAmount Decimal   @default(0) @db.Decimal(10, 2)
+  startDate     DateTime  @default(now())
+  targetDate    DateTime?
+  isCompleted   Boolean   @default(false)
+  userId        String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([userId])
   @@index([isCompleted])
+}
+
+model Report {
+  id          String       @id @default(uuid())
+  title       String
+  description String       @db.Text
+  location    String?
+  status      ReportStatus @default(PENDING)
+  isEmergency Boolean      @default(false)
+  userId      String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([isEmergency])
+  @@index([createdAt])
+}
+
+enum ReportStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  DISMISSED
 }
