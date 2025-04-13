@@ -42,6 +42,15 @@ model User {
   Task           Task[]
   AIConversation AIConversation[]
   Interview      Interview[]
+
+  // Expense tracker relations
+  Expense            Expense[]
+  Income             Income[]
+  Budget             Budget[]
+  ExpenseCategory    ExpenseCategory[]
+  SavingsGoal        SavingsGoal[]
+  PaymentSchedule    PaymentSchedule[]
+  Semester           Semester[]
 }
 
 enum Role {
@@ -415,4 +424,190 @@ enum InterviewStatus {
   IN_PROGRESS
   COMPLETED
   EVALUATED
+}
+
+model ExpenseCategory {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  icon        String?
+  userId      String
+  isDefault   Boolean  @default(false)
+  color       String?
+  
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses        Expense[]
+  budgets         Budget[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([name, userId])
+  @@index([userId])
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  amount      Decimal  @db.Decimal(10, 2)
+  description String?
+  date        DateTime
+  categoryId  String
+  userId      String
+  paymentMethod PaymentMethod?
+  location    String?
+  semesterId  String?
+  
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    ExpenseCategory @relation(fields: [categoryId], references: [id])
+  semester    Semester?       @relation(fields: [semesterId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([categoryId])
+  @@index([date])
+  @@index([semesterId])
+}
+
+model Income {
+  id          String   @id @default(cuid())
+  amount      Decimal  @db.Decimal(10, 2)
+  source      String
+  description String?
+  date        DateTime
+  userId      String
+  recurring   Boolean  @default(false)
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([date])
+}
+
+model Budget {
+  id          String   @id @default(cuid())
+  amount      Decimal  @db.Decimal(10, 2)
+  period      BudgetPeriod
+  startDate   DateTime
+  endDate     DateTime?
+  categoryId  String
+  userId      String
+  semesterId  String?
+  
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    ExpenseCategory @relation(fields: [categoryId], references: [id])
+  semester    Semester?       @relation(fields: [semesterId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([categoryId])
+  @@index([semesterId])
+}
+
+enum BudgetPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  SEMESTER
+  YEARLY
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  MOBILE_PAYMENT
+  SCHOLARSHIP
+  OTHER
+}
+
+model Semester {
+  id          String   @id @default(cuid())
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  year        Int
+  term        Term
+  isActive    Boolean  @default(false)
+  userId      String
+  
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses         Expense[]
+  budgets          Budget[]
+  paymentSchedules PaymentSchedule[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([isActive])
+}
+
+enum Term {
+  FALL
+  SPRING
+  SUMMER
+}
+
+model PaymentSchedule {
+  id          String          @id @default(cuid())
+  name        String
+  amount      Decimal         @db.Decimal(10, 2)
+  dueDate     DateTime
+  isPaid      Boolean         @default(false)
+  paidDate    DateTime?
+  semesterId  String
+  userId      String
+  paymentType UniversityPaymentType
+  notes       String?
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  semester    Semester  @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([semesterId])
+  @@index([dueDate])
+  @@index([isPaid])
+}
+
+enum UniversityPaymentType {
+  TUITION
+  HOUSING
+  MEAL_PLAN
+  BOOKS
+  LAB_FEES
+  ACTIVITY_FEES
+  TECHNOLOGY_FEES
+  INSURANCE
+  PARKING
+  OTHER
+}
+
+model SavingsGoal {
+  id          String   @id @default(cuid())
+  name        String
+  targetAmount Decimal  @db.Decimal(10, 2)
+  currentAmount Decimal @db.Decimal(10, 2) @default(0)
+  startDate   DateTime @default(now())
+  targetDate  DateTime?
+  isCompleted Boolean  @default(false)
+  userId      String
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([isCompleted])
 }
