@@ -41,6 +41,7 @@ model User {
   Board          Board[]
   Task           Task[]
   AIConversation AIConversation[]
+  Interview      Interview[]
 }
 
 enum Role {
@@ -369,4 +370,49 @@ model AIMessage {
   conversation   AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
+}
+
+model Interview {
+  id                String             @id @default(uuid())
+  userId            String
+  topic             String
+  level             InterviewLevel
+  status            InterviewStatus    @default(CREATED)
+  feedback          String?            @db.Text
+  score             Int?
+  duration          Int? // Duration in minutes
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interviewMessages InterviewMessage[]
+
+  @@index([userId])
+  @@index([topic])
+  @@index([level])
+  @@index([status])
+}
+
+model InterviewMessage {
+  id          String    @id @default(uuid())
+  interviewId String
+  role        String // 'user', 'assistant', 'system', 'interviewer'
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  @@index([interviewId])
+}
+
+enum InterviewLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum InterviewStatus {
+  CREATED
+  IN_PROGRESS
+  COMPLETED
+  EVALUATED
 }
