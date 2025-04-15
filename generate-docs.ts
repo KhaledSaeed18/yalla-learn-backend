@@ -9,6 +9,19 @@ const doc = {
             name: 'Khaled Saeed'
         }
     },
+    host: 'localhost:5005',
+    basePath: '/',
+    schemes: ['http', 'https'],
+    consumes: ['application/json'],
+    produces: ['application/json'],
+    securityDefinitions: {
+        bearerAuth: {
+            type: 'apiKey',
+            name: 'authorization',
+            in: 'header',
+            description: 'Enter your bearer token in the format "Bearer {token}"'
+        }
+    },
     servers: [
         {
             url: '{baseUrl}/v1',
@@ -20,7 +33,21 @@ const doc = {
                 }
             }
         }
-    ]
+    ],
+    definitions: {
+        SuccessResponse: {
+            status: "success",
+            statusCode: 200,
+            message: "Operation completed successfully",
+            data: {}
+        },
+        ErrorResponse: {
+            status: "error",
+            statusCode: 400,
+            message: "An error occurred",
+            error: {}
+        }
+    }
 };
 
 const outputFile = './api-docs/openapi-file.yml';
@@ -32,5 +59,6 @@ const routes = [
     './src/api/**/*.validation.ts',
     './src/api/**/*.rateLimiting.ts'
 ];
+
 
 swaggerAutogen(outputFile, routes, doc);
