@@ -1,11 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-    BudgetPeriod,
-    PaymentMethod,
-    PrismaClient,
-    Term,
-    UniversityPaymentType
-} from '@prisma/client';
+import { BudgetPeriod, PaymentMethod, PrismaClient, Term, UniversityPaymentType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // DTOs for data transfer
