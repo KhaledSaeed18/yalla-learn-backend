@@ -10,12 +10,12 @@ export class ChatController {
     // Get conversations for the current user
     async getUserConversations(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            if (!req.user || !req.user.id) {
+            if (!req.user || !req.user.userId) {
                 next(errorHandler(401, "Authentication required"));
                 return;
             }
 
-            const userId = req.user.id;
+            const userId = req.user.userId
             const { page = 1, limit = 20 } = req.query;
             const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
@@ -104,12 +104,12 @@ export class ChatController {
     // Get conversation details and messages
     async getConversationMessages(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            if (!req.user || !req.user.id) {
+            if (!req.user || !req.user.userId) {
                 next(errorHandler(401, "Authentication required"));
                 return;
             }
 
-            const userId = req.user.id;
+            const userId = req.user.userId;
             const { conversationId } = req.params;
             const { page = 1, limit = 50 } = req.query;
             const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
@@ -225,12 +225,12 @@ export class ChatController {
     // Create or get conversation with a listing owner
     async createOrGetConversation(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            if (!req.user || !req.user.id) {
+            if (!req.user || !req.user.userId) {
                 next(errorHandler(401, "Authentication required"));
                 return;
             }
 
-            const userId = req.user.id;
+            const userId = req.user.userId;
             const { listingId } = req.body;
 
             // Validate request

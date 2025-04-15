@@ -20,11 +20,11 @@ export class ListingController {
 
     createListing = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            if (!req.user || !req.user.id) {
+            if (!req.user || !req.user.userId) {
                 return next(errorHandler(401, 'Authentication required'));
             }
 
-            const listing = await this.listingService.createListing(req.user.id, req.body);
+            const listing = await this.listingService.createListing(req.user.userId, req.body);
 
             res.status(201).json({
                 success: true,
@@ -104,11 +104,11 @@ export class ListingController {
 
     getUserListings = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            if (!req.user || !req.user.id) {
+            if (!req.user || !req.user.userId) {
                 return next(errorHandler(401, "Authentication required"));
             }
 
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const {
                 page,
@@ -156,11 +156,11 @@ export class ListingController {
 
     updateListing = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            if (!req.user || !req.user.id) {
+            if (!req.user || !req.user.userId) {
                 return next(errorHandler(401, "Authentication required"));
             }
 
-            const userId = req.user.id;
+            const userId = req.user.userId;
             const { id } = req.params;
 
             const updatedListing = await this.listingService.updateListing(id, userId, req.body);
@@ -186,11 +186,11 @@ export class ListingController {
 
     deleteListing = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            if (!req.user || !req.user.id) {
+            if (!req.user || !req.user.userId) {
                 return next(errorHandler(401, "Authentication required"));
             }
 
-            const userId = req.user.id;
+            const userId = req.user.userId;
             const { id } = req.params;
 
             await this.listingService.deleteListing(id, userId);
