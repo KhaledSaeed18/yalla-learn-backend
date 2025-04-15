@@ -1,11 +1,6 @@
 import express from 'express';
 import ReportController from './reports.controller';
-import {
-    createReportLimiter,
-    getReportsLimiter,
-    deleteReportLimiter,
-    adminReportLimiter
-} from './reports.rateLimiting';
+import { createReportLimiter, getReportsLimiter, deleteReportLimiter, adminReportLimiter } from './reports.rateLimiting';
 import { authorize } from '../../middlewares/authorization.middleware';
 
 const router = express.Router();
