@@ -15,7 +15,7 @@ const doc = {
             description: 'API server',
             variables: {
                 baseUrl: {
-                    default: 'http://localhost:3000',
+                    default: 'http://localhost:5005',
                     description: 'Base URL of the API'
                 }
             }
@@ -24,16 +24,13 @@ const doc = {
 };
 
 const outputFile = './api-docs/openapi-file.yml';
+
 const routes = [
-    './src/api/auth/auth.routes.ts',
-    './src/api/blog/blog.routes.ts',
-    './src/api/qa/qa.routes.ts',
-    './src/api/kanban/kanban.routes.ts',
-    './src/api/ai/ai.routes.ts',
-    './src/api/interviews/interviews.routes.ts',
-    './src/api/listings/listings.routes.ts',
-    './src/api/services/services.routes.ts',
-    './src/api/reports/reports.routes.ts'
+    './src/api/**/*.routes.ts',
+    './src/api/**/*.controller.ts',
+    './src/api/**/*.service.ts',
+    './src/api/**/*.validation.ts',
+    './src/api/**/*.rateLimiting.ts'
 ];
 
 swaggerAutogen(outputFile, routes, doc);
