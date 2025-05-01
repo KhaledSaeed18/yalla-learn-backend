@@ -43,34 +43,6 @@ export default class AuthController {
     }
   }
 
-  /**
- * @swagger
- * /auth/signin:
- *   post:
- *     summary: User login
- *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
- *                 format: password
- *     responses:
- *       200:
- *         description: Successful login
- *       401:
- *         description: Invalid credentials
- */
   // Signin controller 
   async signin(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
