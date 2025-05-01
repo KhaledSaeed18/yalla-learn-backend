@@ -14,6 +14,7 @@ import KanbanRouter from './api/kanban/kanban.routes';
 import AIRouter from './api/ai/ai.routes';
 import ListingRouter from './api/listings/listings.routes';
 import ChatRouter from './api/chat/chat.routes';
+import ServiceRouter from './api/services/services.routes';
 
 dotenv.config();
 
@@ -66,6 +67,10 @@ app.use(`${baseUrl}/ai`, aiRouter.getRouter());
 // Listings routes
 const listingsRouter = new ListingRouter();
 app.use(`${baseUrl}/listings`, listingsRouter.getRouter());
+
+// Services routes
+const servicesRouter = new ServiceRouter();
+app.use(`${baseUrl}/services`, servicesRouter.getRouter());
 
 // Chat routes
 const chatRouter = new ChatRouter();

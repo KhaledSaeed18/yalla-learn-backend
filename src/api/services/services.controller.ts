@@ -20,11 +20,11 @@ export class ServiceController {
 
     createService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            if (!req.user || !req.user.id) {
+            if (!req.user || !req.user.userId) {
                 return next(errorHandler(401, 'Authentication required'));
             }
 
-            const service = await this.serviceGigService.createService(req.user.id, req.body);
+            const service = await this.serviceGigService.createService(req.user.userId, req.body);
 
             res.status(201).json({
                 success: true,
@@ -101,11 +101,11 @@ export class ServiceController {
 
     getUserServices = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            if (!req.user || !req.user.id) {
+            if (!req.user || !req.user.userId) {
                 return next(errorHandler(401, "Authentication required"));
             }
 
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const {
                 page,
@@ -150,11 +150,11 @@ export class ServiceController {
 
     updateService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            if (!req.user || !req.user.id) {
+            if (!req.user || !req.user.userId) {
                 return next(errorHandler(401, "Authentication required"));
             }
 
-            const userId = req.user.id;
+            const userId = req.user.userId;
             const { id } = req.params;
 
             const updatedService = await this.serviceGigService.updateService(id, userId, req.body);
@@ -180,11 +180,11 @@ export class ServiceController {
 
     deleteService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            if (!req.user || !req.user.id) {
+            if (!req.user || !req.user.userId) {
                 return next(errorHandler(401, "Authentication required"));
             }
 
-            const userId = req.user.id;
+            const userId = req.user.userId;
             const { id } = req.params;
 
             await this.serviceGigService.deleteService(id, userId);
