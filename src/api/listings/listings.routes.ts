@@ -29,6 +29,7 @@ export default class ListingRouter {
         // Get a listing by ID
         this.router.get(
             '/get-listing/:id',
+            authorize,
             listingGetLimiter,
             this.listingController.getListingById
         );
@@ -37,6 +38,7 @@ export default class ListingRouter {
         this.router.get(
             '/get-listings',
             listingAdminGetLimiter,
+            authorize,
             validateGetListingsQuery,
             this.listingController.getAllListings
         );
