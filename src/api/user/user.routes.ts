@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import UserController from './user.controller';
 import { authorize, authorizeAdmin } from '../../middlewares/authorization.middleware';
-import { profileGetLimiter, profileUpdateLimiter, profileDeleteLimiter, adminUsersGetLimiter, adminUserDeleteLimiter, adminUserAnalyticsLimiter } from './user.rateLimiting';
+import { profileGetLimiter, profileUpdateLimiter, profileDeleteLimiter, passwordChangeLimiter, adminUsersGetLimiter, adminUserDeleteLimiter, adminUserAnalyticsLimiter } from './user.rateLimiting';
 import { sanitizeRequestBody } from '../../middlewares/sanitizeBody.middleware';
-import { validateUserUpdate, validateGetUsersQuery } from './user.validation';
+import { validateUserUpdate, validateGetUsersQuery, validatePasswordChange } from './user.validation';
 
 export default class UserRouter {
     private router: Router;
@@ -38,6 +38,15 @@ export default class UserRouter {
             authorize,
             profileDeleteLimiter,
             this.userController.deleteUserAccount
+        );
+
+        this.router.post(
+            "/change-password",
+            authorize,
+            passwordChangeLimiter,
+            sanitizeRequestBody,
+            validatePasswordChange,
+            this.userController.changePassword
         );
 
         // Admin routes for user management

@@ -3,6 +3,26 @@ import { Request, Response, NextFunction } from 'express';
 import { errorHandler } from '../../utils/errorHandler';
 import { Role } from '@prisma/client';
 
+// Password change schema
+const passwordChangeSchema = z.object({
+    oldPassword: z.string()
+        .min(8, "Current password is required and must be at least 8 characters"),
+
+    newPassword: z.string()
+        .min(8, "New password must be at least 8 characters")
+        .max(100, "New password cannot exceed 100 characters")
+        .regex(
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+            "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
+        ),
+
+    confirmNewPassword: z.string()
+        .min(8, "Confirm password is required")
+}).refine(data => data.newPassword === data.confirmNewPassword, {
+    message: "Passwords don't match",
+    path: ["confirmNewPassword"]
+});
+
 // User profile update schema
 const userUpdateSchema = z.object({
     firstName: z.string()
@@ -129,3 +149,4 @@ const validateQuery = <T extends z.ZodSchema>(schema: T) => (req: Request, res: 
 export const validateUserUpdate = validate(userUpdateSchema);
 export const validateAdminUserUpdate = validate(adminUserUpdateSchema);
 export const validateGetUsersQuery = validateQuery(getUsersQuerySchema);
+export const validatePasswordChange = validate(passwordChangeSchema);

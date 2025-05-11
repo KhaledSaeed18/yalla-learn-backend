@@ -1,4 +1,5 @@
 import { PrismaClient, Role, User, Prisma } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 export interface UserUpdateData {
     firstName?: string;
@@ -213,5 +214,35 @@ export default class UserService {
             regularUsers,
             usersByMonth
         };
+    }
+
+    // Change user password
+    public async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<{ success: boolean; message?: string }> {
+        // Find the user
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId }
+        });
+
+        if (!user) {
+            return { success: false, message: "User not found" };
+        }
+
+        // Verify old password (using bcrypt)
+        const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+
+        if (!isPasswordValid) {
+            return { success: false, message: "Current password is incorrect" };
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update user with new password
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: { password: hashedPassword }
+        });
+
+        return { success: true };
     }
 }

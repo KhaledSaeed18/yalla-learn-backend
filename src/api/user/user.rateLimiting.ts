@@ -26,6 +26,14 @@ export const profileDeleteLimiter = rateLimit({
     }
 });
 
+export const passwordChangeLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // 10 requests per 15 minutes
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many password change attempts, please try again later"));
+    }
+});
+
 // Rate limiting for admin user management endpoints
 export const adminUsersGetLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes

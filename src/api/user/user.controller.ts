@@ -15,20 +15,21 @@ export default class UserController {
         this.getAllUsers = this.getAllUsers.bind(this);
         this.adminDeleteUser = this.adminDeleteUser.bind(this);
         this.getUserStatistics = this.getUserStatistics.bind(this);
+        this.changePassword = this.changePassword.bind(this);
     }
 
     // Utility function to remove sensitive information from user object
     private sanitizeUserData(user: User) {
-        const { 
+        const {
             password,
             verificationCode,
             codeExpiry,
             resetPasswordCode,
             resetPasswordExpiry,
             totpSecret,
-            ...sanitizedUser 
+            ...sanitizedUser
         } = user;
-        
+
         return sanitizedUser;
     }
 
@@ -37,7 +38,7 @@ export default class UserController {
         try {
             // User ID will be added by the authorize middleware
             const userId = req.user?.userId;
-            
+
             if (!userId) {
                 next(errorHandler(401, "Authentication required"));
                 return;
@@ -67,7 +68,7 @@ export default class UserController {
     async updateUserProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const userId = req.user?.userId;
-            
+
             if (!userId) {
                 next(errorHandler(401, "Authentication required"));
                 return;
@@ -93,7 +94,7 @@ export default class UserController {
     async deleteUserAccount(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const userId = req.user?.userId;
-            
+
             if (!userId) {
                 next(errorHandler(401, "Authentication required"));
                 return;
@@ -126,7 +127,7 @@ export default class UserController {
                 status: "success",
                 statusCode: 200,
                 message: "Users retrieved successfully",
-                data: { 
+                data: {
                     users: sanitizedUsers,
                     pagination: {
                         total,
@@ -153,7 +154,7 @@ export default class UserController {
 
             // Check if the user exists before deleting
             const user = await this.userService.getUserById(id);
-            
+
             if (!user) {
                 next(errorHandler(404, "User not found"));
                 return;
@@ -184,6 +185,35 @@ export default class UserController {
             });
         } catch (err) {
             next(errorHandler(500, (err as Error).message || "Failed to retrieve user statistics"));
+        }
+    }
+
+    // Change the authenticated user's password
+    async changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+
+            if (!userId) {
+                next(errorHandler(401, "Authentication required"));
+                return;
+            }
+
+            const { oldPassword, newPassword } = req.body;
+
+            const result = await this.userService.changePassword(userId, oldPassword, newPassword);
+
+            if (!result.success) {
+                next(errorHandler(400, result.message || "Failed to change password"));
+                return;
+            }
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Password changed successfully"
+            });
+        } catch (err) {
+            next(errorHandler(500, (err as Error).message || "Failed to change password"));
         }
     }
 }
