@@ -1,21 +1,21 @@
 import { Request, Response, NextFunction } from 'express';
-import { Conversation, Message } from './chat.model';
-import { PrismaClient } from '@prisma/client';
-import { errorHandler } from '../../utils/errorHandler';
 import mongoose from 'mongoose';
+import { Conversation, Message } from './chat.model';
+import { errorHandler } from '../../utils/errorHandler';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export class ChatController {
+export class ChatControllerSimple {
     // Get conversations for the current user
     async getUserConversations(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             if (!req.user || !req.user.userId) {
-                next(errorHandler(401, "Authentication required"));
+                next(errorHandler(401, 'Unauthorized'));
                 return;
             }
 
-            const userId = req.user.userId
+            const userId = req.user.userId;
             const { page = 1, limit = 20 } = req.query;
             const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
@@ -34,63 +34,38 @@ export class ChatController {
 
             // Get latest message for each conversation
             const conversationsWithDetails = await Promise.all(conversations.map(async (conversation) => {
-                // Get the most recent message
-                const lastMessage = await Message.findOne({
+                // Get latest message
+                const latestMessage = await Message.findOne({
                     conversationId: conversation._id
-                })
-                    .sort({ createdAt: -1 })
-                    .lean();
+                }).sort({ createdAt: -1 }).lean();
 
-                // Get unread messages count
-                const unreadCount = await Message.countDocuments({
-                    conversationId: conversation._id,
-                    senderId: { $ne: userId },
-                    read: false
-                });
+                // Get other participant details
+                const otherParticipantId = conversation.participants.find(id => id !== userId);
+                let otherParticipant = null;
 
-                // Get entity details from PostgreSQL based on entity type
-                let entity;
-                if (conversation.entityType === 'listing' && conversation.listingId) {
-                    entity = await prisma.listing.findUnique({
-                        where: { id: conversation.listingId },
+                if (otherParticipantId) {
+                    otherParticipant = await prisma.user.findUnique({
+                        where: { id: otherParticipantId },
                         select: {
                             id: true,
-                            title: true,
-                            images: true
-                        }
-                    });
-                } else if (conversation.entityType === 'service' && conversation.serviceId) {
-                    entity = await prisma.gigService.findUnique({
-                        where: { id: conversation.serviceId },
-                        select: {
-                            id: true,
-                            title: true
+                            firstName: true,
+                            lastName: true
                         }
                     });
                 }
 
-                // Get other participant details from PostgreSQL
-                const otherParticipantId = conversation.participants.find(id => id !== userId);
-                const otherParticipant = otherParticipantId ? await prisma.user.findUnique({
-                    where: { id: otherParticipantId },
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        avatar: true
-                    }
-                }) : null;
-
                 return {
-                    _id: conversation._id,
-                    entityId: conversation.entityType === 'listing' ? conversation.listingId : conversation.serviceId,
+                    id: conversation._id,
                     entityType: conversation.entityType,
-                    entity,
-                    participant: otherParticipant,
-                    lastMessage,
-                    unreadCount,
-                    updatedAt: conversation.updatedAt,
-                    createdAt: conversation.createdAt
+                    entityId: conversation.entityType === 'listing' ? conversation.listingId : conversation.serviceId,
+                    otherParticipant,
+                    lastMessage: latestMessage ? {
+                        content: latestMessage.content,
+                        senderId: latestMessage.senderId,
+                        createdAt: latestMessage.createdAt
+                    } : null,
+                    createdAt: conversation.createdAt,
+                    updatedAt: conversation.updatedAt
                 };
             }));
 
@@ -113,11 +88,11 @@ export class ChatController {
         }
     }
 
-    // Get conversation details and messages
+    // Get conversation messages
     async getConversationMessages(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             if (!req.user || !req.user.userId) {
-                next(errorHandler(401, "Authentication required"));
+                next(errorHandler(401, 'Unauthorized'));
                 return;
             }
 
@@ -128,7 +103,7 @@ export class ChatController {
 
             // Validate conversationId format
             if (!mongoose.Types.ObjectId.isValid(conversationId)) {
-                next(errorHandler(400, "Invalid conversation ID"));
+                next(errorHandler(400, 'Invalid conversation ID'));
                 return;
             }
 
@@ -136,13 +111,13 @@ export class ChatController {
             const conversation = await Conversation.findById(conversationId);
 
             if (!conversation) {
-                next(errorHandler(404, "Conversation not found"));
+                next(errorHandler(404, 'Conversation not found'));
                 return;
             }
 
             // Check if user is a participant
             if (!conversation.participants.includes(userId)) {
-                next(errorHandler(403, "You don't have permission to access this conversation"));
+                next(errorHandler(403, 'You are not a participant in this conversation'));
                 return;
             }
 
@@ -158,38 +133,6 @@ export class ChatController {
             // Get total count for pagination
             const totalMessages = await Message.countDocuments({ conversationId });
 
-            // Get entity details based on entity type
-            let entity;
-            if (conversation.entityType === 'listing' && conversation.listingId) {
-                entity = await prisma.listing.findUnique({
-                    where: { id: conversation.listingId },
-                    include: {
-                        user: {
-                            select: {
-                                id: true,
-                                firstName: true,
-                                lastName: true,
-                                avatar: true
-                            }
-                        }
-                    }
-                });
-            } else if (conversation.entityType === 'service' && conversation.serviceId) {
-                entity = await prisma.gigService.findUnique({
-                    where: { id: conversation.serviceId },
-                    include: {
-                        user: {
-                            select: {
-                                id: true,
-                                firstName: true,
-                                lastName: true,
-                                avatar: true
-                            }
-                        }
-                    }
-                });
-            }
-
             // Get other participant details
             const otherParticipantId = conversation.participants.find(id => id !== userId);
             const otherParticipant = otherParticipantId ? await prisma.user.findUnique({
@@ -197,32 +140,18 @@ export class ChatController {
                 select: {
                     id: true,
                     firstName: true,
-                    lastName: true,
-                    avatar: true
+                    lastName: true
                 }
             }) : null;
 
-            // Enhance messages with sender info
-            const messagesWithSender = await Promise.all(messages.map(async (message) => {
-                const sender = message.senderId === userId ?
-                    req.user :
-                    otherParticipant;
-
-                return {
-                    ...message,
-                    sender
-                };
+            // Format messages for response
+            const formattedMessages = messages.map(message => ({
+                id: message._id,
+                content: message.content,
+                senderId: message.senderId,
+                isFromCurrentUser: message.senderId === userId,
+                createdAt: message.createdAt
             }));
-
-            // Mark unread messages as read
-            await Message.updateMany(
-                {
-                    conversationId,
-                    senderId: { $ne: userId },
-                    read: false
-                },
-                { read: true }
-            );
 
             res.status(200).json({
                 status: "success",
@@ -233,12 +162,11 @@ export class ChatController {
                         id: conversation._id,
                         entityId: conversation.entityType === 'listing' ? conversation.listingId : conversation.serviceId,
                         entityType: conversation.entityType,
-                        entity,
-                        participant: otherParticipant,
+                        otherParticipant,
                         createdAt: conversation.createdAt,
                         updatedAt: conversation.updatedAt
                     },
-                    messages: messagesWithSender,
+                    messages: formattedMessages,
                     pagination: {
                         total: totalMessages,
                         page: parseInt(page as string),
@@ -252,149 +180,163 @@ export class ChatController {
         }
     }
 
-    // Create or get conversation with a listing/service owner
-    async createOrGetConversation(req: Request, res: Response, next: NextFunction): Promise<void> {
+    // Create a new conversation
+    async createConversation(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             if (!req.user || !req.user.userId) {
-                next(errorHandler(401, "Authentication required"));
+                next(errorHandler(401, 'Unauthorized'));
                 return;
             }
 
             const userId = req.user.userId;
-            const { listingId, serviceId } = req.body;
+            const { listingId, serviceId, receiverId } = req.body;
 
-            // Validate request - either listingId or serviceId must be provided
+            // Validate request
+            if (!receiverId) {
+                next(errorHandler(400, 'Receiver ID is required'));
+                return;
+            }
+
             if (!listingId && !serviceId) {
-                next(errorHandler(400, "Either listing ID or service ID is required"));
+                next(errorHandler(400, 'Either listing ID or service ID is required'));
                 return;
             }
 
             if (listingId && serviceId) {
-                next(errorHandler(400, "Please provide either a listing ID or a service ID, not both"));
+                next(errorHandler(400, 'Provide either listing ID or service ID, not both'));
                 return;
-            }
-
-            let ownerId: string;
-            let entityId: string;
-            let entityType: 'listing' | 'service';
-            let entityTitle: string;
-
-            // Check if entity exists and get owner ID
-            if (listingId) {
-                const listing = await prisma.listing.findUnique({
-                    where: { id: listingId },
-                    select: {
-                        id: true,
-                        userId: true,
-                        title: true
-                    }
-                });
-
-                if (!listing) {
-                    next(errorHandler(404, "Listing not found"));
-                    return;
-                }
-
-                ownerId = listing.userId;
-                entityId = listing.id;
-                entityTitle = listing.title;
-                entityType = 'listing';
-            } else {
-                const service = await prisma.gigService.findUnique({
-                    where: { id: serviceId! },
-                    select: {
-                        id: true,
-                        userId: true,
-                        title: true
-                    }
-                });
-
-                if (!service) {
-                    next(errorHandler(404, "Service not found"));
-                    return;
-                }
-
-                ownerId = service.userId;
-                entityId = service.id;
-                entityTitle = service.title;
-                entityType = 'service';
             }
 
             // Cannot create a conversation with yourself
-            if (ownerId === userId) {
-                next(errorHandler(400, "You cannot start a conversation with yourself"));
+            if (receiverId === userId) {
+                next(errorHandler(400, 'Cannot create a conversation with yourself'));
                 return;
             }
 
-            // Check if conversation already exists between these users for this entity
+            // Determine entity type
+            const entityType = listingId ? 'listing' : 'service';
+            const entityId = listingId || serviceId;
+
+            // Check if a conversation already exists
             let conversation;
             if (entityType === 'listing') {
                 conversation = await Conversation.findOne({
                     listingId: entityId,
-                    entityType,
-                    participants: { $all: [userId, ownerId] }
+                    participants: { $all: [userId, receiverId] }
                 });
             } else {
                 conversation = await Conversation.findOne({
                     serviceId: entityId,
-                    entityType,
-                    participants: { $all: [userId, ownerId] }
+                    participants: { $all: [userId, receiverId] }
                 });
             }
 
-            // If conversation doesn't exist, create it
-            if (!conversation) {
-                const conversationData: {
-                    participants: string[];
-                    entityType: 'listing' | 'service';
-                    listingId?: string;
-                    serviceId?: string;
-                } = {
-                    participants: [userId, ownerId],
-                    entityType
-                };
-
-                if (entityType === 'listing') {
-                    conversationData.listingId = entityId;
-                } else {
-                    conversationData.serviceId = entityId;
-                }
-
-                conversation = await Conversation.create(conversationData);
+            // If conversation exists, return it
+            if (conversation) {
+                res.status(200).json({
+                    status: "success",
+                    statusCode: 200,
+                    message: "Conversation already exists",
+                    data: {
+                        conversationId: conversation._id
+                    }
+                });
+                return;
             }
 
-            // Get other participant details
-            const otherParticipant = await prisma.user.findUnique({
-                where: { id: ownerId },
-                select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    avatar: true
-                }
-            });
+            // Create new conversation
+            const conversationData: {
+                participants: string[];
+                entityType: 'listing' | 'service';
+                listingId?: string;
+                serviceId?: string;
+            } = {
+                participants: [userId, receiverId],
+                entityType
+            };
 
-            res.status(200).json({
+            if (entityType === 'listing') {
+                conversationData.listingId = entityId;
+            } else {
+                conversationData.serviceId = entityId;
+            }
+
+            const newConversation = await Conversation.create(conversationData);
+
+            res.status(201).json({
                 status: "success",
-                statusCode: 200,
-                message: "Conversation retrieved/created successfully",
+                statusCode: 201,
+                message: "Conversation created successfully",
                 data: {
-                    conversation: {
-                        id: conversation._id,
-                        entityId: entityType === 'listing' ? conversation.listingId : conversation.serviceId,
-                        entityType,
-                        entity: {
-                            id: entityId,
-                            title: entityTitle
-                        },
-                        participant: otherParticipant,
-                        createdAt: conversation.createdAt,
-                        updatedAt: conversation.updatedAt
-                    }
+                    conversationId: newConversation._id
                 }
             });
         } catch (err) {
-            next(errorHandler(500, (err as Error).message || "Failed to retrieve/create conversation"));
+            next(errorHandler(500, (err as Error).message || "Failed to create conversation"));
+        }
+    }
+
+    // Send a message to an existing conversation
+    async sendMessage(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            if (!req.user || !req.user.userId) {
+                next(errorHandler(401, 'Unauthorized'));
+                return;
+            }
+
+            const userId = req.user.userId;
+            const { conversationId } = req.params;
+            const { content } = req.body;
+
+            // Validate request
+            if (!content) {
+                next(errorHandler(400, 'Message content is required'));
+                return;
+            }
+
+            if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+                next(errorHandler(400, 'Invalid conversation ID'));
+                return;
+            }
+
+            // Check if conversation exists
+            const conversation = await Conversation.findById(conversationId);
+            if (!conversation) {
+                next(errorHandler(404, 'Conversation not found'));
+                return;
+            }
+
+            // Check if user is a participant
+            if (!conversation.participants.includes(userId)) {
+                next(errorHandler(403, 'You are not a participant in this conversation'));
+                return;
+            }
+
+            // Create and save the message
+            const newMessage = await Message.create({
+                conversationId,
+                senderId: userId,
+                content,
+                read: false
+            });
+
+            // Update conversation timestamp (for sorting)
+            await Conversation.findByIdAndUpdate(conversationId, { updatedAt: new Date() });
+
+            res.status(201).json({
+                status: "success",
+                statusCode: 201,
+                message: "Message sent successfully",
+                data: {
+                    messageId: newMessage._id,
+                    conversationId,
+                    content,
+                    senderId: userId,
+                    createdAt: newMessage.createdAt
+                }
+            });
+        } catch (err) {
+            next(errorHandler(500, (err as Error).message || "Failed to send message"));
         }
     }
 }

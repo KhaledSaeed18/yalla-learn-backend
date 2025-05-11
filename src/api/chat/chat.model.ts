@@ -67,13 +67,11 @@ const MessageSchema: Schema = new Schema(
     { timestamps: true }
 );
 
-// Create indexes for faster queries
-ConversationSchema.index({ listingId: 1 });
-ConversationSchema.index({ serviceId: 1 });
-ConversationSchema.index({ entityType: 1 });
+// Simple indexes for query performance
 ConversationSchema.index({ participants: 1 });
-MessageSchema.index({ conversationId: 1 });
-MessageSchema.index({ senderId: 1 });
+ConversationSchema.index({ listingId: 1, participants: 1 });
+ConversationSchema.index({ serviceId: 1, participants: 1 });
+MessageSchema.index({ conversationId: 1, createdAt: -1 });
 
 export const Conversation = mongoose.model<IConversation>('Conversation', ConversationSchema);
 export const Message = mongoose.model<IMessage>('Message', MessageSchema);

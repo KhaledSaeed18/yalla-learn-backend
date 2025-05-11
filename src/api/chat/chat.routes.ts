@@ -1,16 +1,16 @@
 import { Router } from 'express';
-import { ChatController } from './chat.controller';
+import { ChatControllerSimple } from './chat.controller';
 import { authorize } from '../../middlewares/authorization.middleware';
-import { chatHistoryLimiter, messagesLimiter, createConversationLimiter } from './chat.rateLimiting';
 import { sanitizeRequestBody } from '../../middlewares/sanitizeBody.middleware';
+import { chatLimiter } from './chat.rateLimiting';
 
 export default class ChatRouter {
     private router: Router;
-    private chatController: ChatController;
+    private chatController: ChatControllerSimple;
 
     constructor() {
         this.router = Router();
-        this.chatController = new ChatController();
+        this.chatController = new ChatControllerSimple();
         this.initRoutes();
     }
 
@@ -19,7 +19,7 @@ export default class ChatRouter {
         this.router.get(
             '/conversations',
             authorize,
-            chatHistoryLimiter,
+            chatLimiter,
             this.chatController.getUserConversations.bind(this.chatController)
         );
 
@@ -27,17 +27,26 @@ export default class ChatRouter {
         this.router.get(
             '/conversations/:conversationId/messages',
             authorize,
-            messagesLimiter,
+            chatLimiter,
             this.chatController.getConversationMessages.bind(this.chatController)
         );
 
-        // Create or get conversation with listing owner
+        // Create a new conversation
         this.router.post(
             '/conversations',
             authorize,
-            createConversationLimiter,
+            chatLimiter,
             sanitizeRequestBody,
-            this.chatController.createOrGetConversation.bind(this.chatController)
+            this.chatController.createConversation.bind(this.chatController)
+        );
+
+        // Send a message to an existing conversation
+        this.router.post(
+            '/conversations/:conversationId/messages',
+            authorize,
+            chatLimiter,
+            sanitizeRequestBody,
+            this.chatController.sendMessage.bind(this.chatController)
         );
     }
 
