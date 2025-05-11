@@ -62,43 +62,88 @@ export class SocketService {
                     conversationId: string;
                     content: string;
                     listingId?: string;
+                    serviceId?: string;
                     receiverId?: string;
                 }) => {
                     try {
                         let conversationId = data.conversationId;
 
                         // If this is a new conversation (no conversationId), create it
-                        if (!conversationId && data.listingId && data.receiverId) {
-                            // Check if users and listing exist in PostgreSQL
-                            const listing = await prisma.listing.findUnique({
-                                where: { id: data.listingId }
-                            });
+                        if (!conversationId && ((data.listingId || data.serviceId) && data.receiverId)) {
+                            let entityType: 'listing' | 'service';
+                            let entityId: string;
+                            let entityExists = false;
 
-                            if (!listing) {
-                                socket.emit('error', { message: 'Listing not found' });
+                            if (data.listingId) {
+                                // Check if listing exists in PostgreSQL
+                                const listing = await prisma.listing.findUnique({
+                                    where: { id: data.listingId }
+                                });
+
+                                if (!listing) {
+                                    socket.emit('error', { message: 'Listing not found' });
+                                    return;
+                                }
+
+                                entityType = 'listing';
+                                entityId = data.listingId;
+                                entityExists = true;
+                            } else if (data.serviceId) {
+                                // Check if service exists in PostgreSQL
+                                const service = await prisma.gigService.findUnique({
+                                    where: { id: data.serviceId }
+                                });
+
+                                if (!service) {
+                                    socket.emit('error', { message: 'Service not found' });
+                                    return;
+                                }
+
+                                entityType = 'service';
+                                entityId = data.serviceId;
+                                entityExists = true;
+                            } else {
+                                socket.emit('error', { message: 'Either listing ID or service ID is required' });
                                 return;
                             }
 
-                            // Create a new conversation
-                            const newConversation = await Conversation.create({
-                                listingId: data.listingId,
-                                participants: [userId, data.receiverId]
-                            });
+                            if (entityExists) {
+                                // Create the conversation data
+                                const conversationData: {
+                                    participants: string[];
+                                    entityType: 'listing' | 'service';
+                                    listingId?: string;
+                                    serviceId?: string;
+                                } = {
+                                    participants: [userId, data.receiverId],
+                                    entityType
+                                };
 
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            conversationId = (newConversation as any)._id.toString();
+                                // Add the appropriate ID based on entity type
+                                if (entityType === 'listing') {
+                                    conversationData.listingId = entityId;
+                                } else {
+                                    conversationData.serviceId = entityId;
+                                }
 
-                            // Join both users to the conversation room
-                            socket.join(conversationId);
-                            const receiverSocketId = this.connectedUsers.get(data.receiverId);
-                            if (receiverSocketId) {
-                                this.io.sockets.sockets.get(receiverSocketId)?.join(conversationId);
+                                // Create a new conversation
+                                const newConversation = await Conversation.create(conversationData);
+
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                conversationId = (newConversation as any)._id.toString();
+
+                                // Join both users to the conversation room
+                                socket.join(conversationId);
+                                const receiverSocketId = this.connectedUsers.get(data.receiverId);
+                                if (receiverSocketId) {
+                                    this.io.sockets.sockets.get(receiverSocketId)?.join(conversationId);
+                                }
+
+                                // Emit new conversation event to both users
+                                this.io.to(conversationId).emit('new-conversation', {
+                                    conversation: newConversation
+                                });
                             }
-
-                            // Emit new conversation event to both users
-                            this.io.to(conversationId).emit('new-conversation', {
-                                conversation: newConversation
-                            });
                         }
 
                         // Create and save the message

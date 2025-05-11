@@ -48,15 +48,26 @@ export class ChatController {
                     read: false
                 });
 
-                // Get listing details from PostgreSQL
-                const listing = await prisma.listing.findUnique({
-                    where: { id: conversation.listingId },
-                    select: {
-                        id: true,
-                        title: true,
-                        images: true
-                    }
-                });
+                // Get entity details from PostgreSQL based on entity type
+                let entity;
+                if (conversation.entityType === 'listing' && conversation.listingId) {
+                    entity = await prisma.listing.findUnique({
+                        where: { id: conversation.listingId },
+                        select: {
+                            id: true,
+                            title: true,
+                            images: true
+                        }
+                    });
+                } else if (conversation.entityType === 'service' && conversation.serviceId) {
+                    entity = await prisma.gigService.findUnique({
+                        where: { id: conversation.serviceId },
+                        select: {
+                            id: true,
+                            title: true
+                        }
+                    });
+                }
 
                 // Get other participant details from PostgreSQL
                 const otherParticipantId = conversation.participants.find(id => id !== userId);
@@ -72,8 +83,9 @@ export class ChatController {
 
                 return {
                     _id: conversation._id,
-                    listingId: conversation.listingId,
-                    listing,
+                    entityId: conversation.entityType === 'listing' ? conversation.listingId : conversation.serviceId,
+                    entityType: conversation.entityType,
+                    entity,
                     participant: otherParticipant,
                     lastMessage,
                     unreadCount,
@@ -146,20 +158,37 @@ export class ChatController {
             // Get total count for pagination
             const totalMessages = await Message.countDocuments({ conversationId });
 
-            // Get listing details
-            const listing = await prisma.listing.findUnique({
-                where: { id: conversation.listingId },
-                include: {
-                    user: {
-                        select: {
-                            id: true,
-                            firstName: true,
-                            lastName: true,
-                            avatar: true
+            // Get entity details based on entity type
+            let entity;
+            if (conversation.entityType === 'listing' && conversation.listingId) {
+                entity = await prisma.listing.findUnique({
+                    where: { id: conversation.listingId },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                firstName: true,
+                                lastName: true,
+                                avatar: true
+                            }
                         }
                     }
-                }
-            });
+                });
+            } else if (conversation.entityType === 'service' && conversation.serviceId) {
+                entity = await prisma.gigService.findUnique({
+                    where: { id: conversation.serviceId },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                firstName: true,
+                                lastName: true,
+                                avatar: true
+                            }
+                        }
+                    }
+                });
+            }
 
             // Get other participant details
             const otherParticipantId = conversation.participants.find(id => id !== userId);
@@ -202,8 +231,9 @@ export class ChatController {
                 data: {
                     conversation: {
                         id: conversation._id,
-                        listingId: conversation.listingId,
-                        listing,
+                        entityId: conversation.entityType === 'listing' ? conversation.listingId : conversation.serviceId,
+                        entityType: conversation.entityType,
+                        entity,
                         participant: otherParticipant,
                         createdAt: conversation.createdAt,
                         updatedAt: conversation.updatedAt
@@ -222,7 +252,7 @@ export class ChatController {
         }
     }
 
-    // Create or get conversation with a listing owner
+    // Create or get conversation with a listing/service owner
     async createOrGetConversation(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             if (!req.user || !req.user.userId) {
@@ -231,52 +261,111 @@ export class ChatController {
             }
 
             const userId = req.user.userId;
-            const { listingId } = req.body;
+            const { listingId, serviceId } = req.body;
 
-            // Validate request
-            if (!listingId) {
-                next(errorHandler(400, "Listing ID is required"));
+            // Validate request - either listingId or serviceId must be provided
+            if (!listingId && !serviceId) {
+                next(errorHandler(400, "Either listing ID or service ID is required"));
                 return;
             }
 
-            // Check if listing exists and get owner ID
-            const listing = await prisma.listing.findUnique({
-                where: { id: listingId },
-                select: {
-                    id: true,
-                    userId: true,
-                    title: true
-                }
-            });
-
-            if (!listing) {
-                next(errorHandler(404, "Listing not found"));
+            if (listingId && serviceId) {
+                next(errorHandler(400, "Please provide either a listing ID or a service ID, not both"));
                 return;
+            }
+
+            let ownerId: string;
+            let entityId: string;
+            let entityType: 'listing' | 'service';
+            let entityTitle: string;
+
+            // Check if entity exists and get owner ID
+            if (listingId) {
+                const listing = await prisma.listing.findUnique({
+                    where: { id: listingId },
+                    select: {
+                        id: true,
+                        userId: true,
+                        title: true
+                    }
+                });
+
+                if (!listing) {
+                    next(errorHandler(404, "Listing not found"));
+                    return;
+                }
+
+                ownerId = listing.userId;
+                entityId = listing.id;
+                entityTitle = listing.title;
+                entityType = 'listing';
+            } else {
+                const service = await prisma.gigService.findUnique({
+                    where: { id: serviceId! },
+                    select: {
+                        id: true,
+                        userId: true,
+                        title: true
+                    }
+                });
+
+                if (!service) {
+                    next(errorHandler(404, "Service not found"));
+                    return;
+                }
+
+                ownerId = service.userId;
+                entityId = service.id;
+                entityTitle = service.title;
+                entityType = 'service';
             }
 
             // Cannot create a conversation with yourself
-            if (listing.userId === userId) {
+            if (ownerId === userId) {
                 next(errorHandler(400, "You cannot start a conversation with yourself"));
                 return;
             }
 
-            // Check if conversation already exists between these users for this listing
-            let conversation = await Conversation.findOne({
-                listingId,
-                participants: { $all: [userId, listing.userId] }
-            });
+            // Check if conversation already exists between these users for this entity
+            let conversation;
+            if (entityType === 'listing') {
+                conversation = await Conversation.findOne({
+                    listingId: entityId,
+                    entityType,
+                    participants: { $all: [userId, ownerId] }
+                });
+            } else {
+                conversation = await Conversation.findOne({
+                    serviceId: entityId,
+                    entityType,
+                    participants: { $all: [userId, ownerId] }
+                });
+            }
 
             // If conversation doesn't exist, create it
             if (!conversation) {
-                conversation = await Conversation.create({
-                    listingId,
-                    participants: [userId, listing.userId]
-                });
+                const conversationData: {
+                    participants: string[];
+                    entityType: 'listing' | 'service';
+                    listingId?: string;
+                    serviceId?: string;
+                } = {
+                    participants: [userId, ownerId],
+                    entityType
+                };
+
+                if (entityType === 'listing') {
+                    conversationData.listingId = entityId;
+                } else {
+                    conversationData.serviceId = entityId;
+                }
+
+                conversation = await Conversation.create(conversationData);
             }
 
             // Get other participant details
             const otherParticipant = await prisma.user.findUnique({
-                where: { id: listing.userId },
+                where: { id: ownerId },
                 select: {
                     id: true,
                     firstName: true,
@@ -292,10 +381,11 @@ export class ChatController {
                 data: {
                     conversation: {
                         id: conversation._id,
-                        listingId: conversation.listingId,
-                        listing: {
-                            id: listing.id,
-                            title: listing.title
+                        entityId: entityType === 'listing' ? conversation.listingId : conversation.serviceId,
+                        entityType,
+                        entity: {
+                            id: entityId,
+                            title: entityTitle
                         },
                         participant: otherParticipant,
                         createdAt: conversation.createdAt,

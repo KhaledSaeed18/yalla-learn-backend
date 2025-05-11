@@ -2,7 +2,9 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 // Chat conversation schema
 export interface IConversation extends Document {
-    listingId: string;
+    listingId?: string;
+    serviceId?: string;
+    entityType: 'listing' | 'service';
     participants: string[];
     createdAt: Date;
     updatedAt: Date;
@@ -12,6 +14,15 @@ const ConversationSchema: Schema = new Schema(
     {
         listingId: {
             type: String,
+            required: false
+        },
+        serviceId: {
+            type: String,
+            required: false
+        },
+        entityType: {
+            type: String,
+            enum: ['listing', 'service'],
             required: true
         },
         participants: [
@@ -58,6 +69,8 @@ const MessageSchema: Schema = new Schema(
 
 // Create indexes for faster queries
 ConversationSchema.index({ listingId: 1 });
+ConversationSchema.index({ serviceId: 1 });
+ConversationSchema.index({ entityType: 1 });
 ConversationSchema.index({ participants: 1 });
 MessageSchema.index({ conversationId: 1 });
 MessageSchema.index({ senderId: 1 });
