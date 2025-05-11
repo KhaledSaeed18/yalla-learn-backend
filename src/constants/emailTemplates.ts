@@ -84,7 +84,7 @@ export const VERIFICATION_EMAIL_TEMPLATE = `
                                 <tr>
                                     <td>
                                         <p style="margin: 0; font-family: Arial, Helvetica, sans-serif;">
-                                            Best regards,<br>"Name" Team
+                                            Best regards,<br>Yalla Learn Team
                                         </p>
                                     </td>
                                 </tr>
@@ -97,7 +97,7 @@ export const VERIFICATION_EMAIL_TEMPLATE = `
                                 <tr>
                                     <td
                                         style="text-align: center; font-size: 14px; color: #6b7280; font-family: Arial, Helvetica, sans-serif;">
-                                        <p style="margin: 0;">&copy; 2025 "Name". All rights reserved.</p>
+                                        <p style="margin: 0;">&copy; 2025 Yalla Learn. All rights reserved.</p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -207,7 +207,7 @@ export const PASSWORD_RESET_EMAIL_TEMPLATE = `
                                 <tr>
                                     <td>
                                         <p style="margin: 0; font-family: Arial, Helvetica, sans-serif;">
-                                            Best regards,<br>"Name" Team
+                                            Best regards,<br>Yalla Learn Team
                                         </p>
                                     </td>
                                 </tr>
@@ -220,7 +220,7 @@ export const PASSWORD_RESET_EMAIL_TEMPLATE = `
                                 <tr>
                                     <td
                                         style="text-align: center; font-size: 14px; color: #6b7280; font-family: Arial, Helvetica, sans-serif;">
-                                        <p style="margin: 0;">&copy; 2025 "Name". All rights reserved.</p>
+                                        <p style="margin: 0;">&copy; 2025 Yalla Learn. All rights reserved.</p>
                                     </td>
                                 </tr>
                                 <tr>

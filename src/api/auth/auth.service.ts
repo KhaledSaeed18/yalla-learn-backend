@@ -84,16 +84,16 @@ export class AuthService {
     const verificationCode = generateOTP();
     const codeExpiry = this.generateCodeExpiry();
 
-    // try {
-    //   await sendVerificationEmail(
-    //     email,
-    //     verificationCode,
-    //     firstName
-    //   );
-    // } catch (error: unknown) {
-    //   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    //   throw new Error(`Error sending verification email: ${errorMessage}`);
-    // }
+    try {
+      await sendVerificationEmail(
+        email,
+        verificationCode,
+        firstName
+      );
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Error sending verification email: ${errorMessage}`);
+    }
 
     const newUser = await this.prisma.user.create({
       data: {
