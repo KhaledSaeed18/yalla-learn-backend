@@ -9,6 +9,7 @@ import { SocketService } from './socket/chat/socket.service';
 
 import AuthRouter from './api/auth/auth.routes';
 import BlogRouter from './api/blog/blog.routes';
+import UserRouter from './api/user/user.routes';
 import QARouter from './api/qa/qa.routes';
 import KanbanRouter from './api/kanban/kanban.routes';
 import AIRouter from './api/ai/ai.routes';
@@ -51,6 +52,10 @@ app.use(`${baseUrl}/auth`, authRouter.getRouter());
 // Blog routes
 const blogRouter = new BlogRouter();
 app.use(`${baseUrl}/blog`, blogRouter.getRouter());
+
+// User routes
+const userRouter = new UserRouter();
+app.use(`${baseUrl}/users`, userRouter.getRouter());
 
 // QA routes
 const qaRouter = new QARouter();
