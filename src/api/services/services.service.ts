@@ -3,7 +3,7 @@ import { PrismaClient, GigService, GigCategory, ServiceDirection } from '@prisma
 interface CreateServiceDTO {
     title: string;
     description: string;
-    price?: number;
+    price?: number | null;
     category: GigCategory;
     direction?: ServiceDirection;
 }
@@ -212,10 +212,16 @@ export class ServiceGigService {
             throw new Error('Unauthorized - You can only update your own services');
         }
 
+        // If direction is changing to REQUESTING, set price to null
+        const finalUpdateData = { ...updateData };
+        if (updateData.direction === 'REQUESTING') {
+            finalUpdateData.price = null;
+        }
+
         // Update the service
         return this.prisma.gigService.update({
             where: { id },
-            data: updateData
+            data: finalUpdateData
         });
     }
 
