@@ -36,7 +36,10 @@ export class ListingService {
                         id: true,
                         firstName: true,
                         lastName: true,
-                        email: true
+                        email: true,
+                        location: true,
+                        phoneNumber: true,
+                        avatar: true,
                     }
                 }
             }
