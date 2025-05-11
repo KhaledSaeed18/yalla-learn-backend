@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Request, Response, NextFunction } from "express";
 import UserService, { UserUpdateData, UserQueryOptions } from "./user.service";
 import { errorHandler } from "../../utils/errorHandler";
@@ -8,7 +9,6 @@ export default class UserController {
 
     constructor() {
         this.userService = new UserService();
-        // Bind all methods to ensure 'this' context is preserved
         this.getUserProfile = this.getUserProfile.bind(this);
         this.updateUserProfile = this.updateUserProfile.bind(this);
         this.deleteUserAccount = this.deleteUserAccount.bind(this);
