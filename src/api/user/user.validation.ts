@@ -15,12 +15,6 @@ const passwordChangeSchema = z.object({
             /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
             "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
         ),
-
-    confirmNewPassword: z.string()
-        .min(8, "Confirm password is required")
-}).refine(data => data.newPassword === data.confirmNewPassword, {
-    message: "Passwords don't match",
-    path: ["confirmNewPassword"]
 });
 
 // User profile update schema
