@@ -248,7 +248,6 @@ export default class KanbanService {
         return task;
     }
 
-
     public async deleteTask(taskId: string, userId: string) {
         // Check ownership
         const task = await this.prisma.task.findUnique({
@@ -275,6 +274,62 @@ export default class KanbanService {
         return this.prisma.task.delete({
             where: {
                 id: taskId,
+            },
+        });
+    }
+
+    // Move task to another column
+    public async moveTask(taskId: string, targetColumnId: string, userId: string) {
+        // Check if task exists
+        const task = await this.prisma.task.findUnique({
+            where: {
+                id: taskId,
+            },
+            include: {
+                column: {
+                    include: {
+                        board: true,
+                    },
+                },
+            },
+        });
+
+        if (!task) {
+            throw new Error("Task not found");
+        }
+
+        // Check ownership of the task
+        if (task.userId !== userId && task.column.board.userId !== userId) {
+            throw new Error("Unauthorized: You don't have permission to move this task");
+        }
+
+        // Check if target column exists
+        const targetColumn = await this.prisma.column.findUnique({
+            where: {
+                id: targetColumnId,
+            },
+            include: {
+                board: true,
+            },
+        });
+
+        if (!targetColumn) {
+            throw new Error("Target column not found");
+        }
+
+        // Check if target column belongs to the same board
+        if (targetColumn.boardId !== task.column.boardId) {
+            throw new Error("Cannot move task to a column in a different board");
+        }
+
+        // Update the task with the new column
+        return this.prisma.task.update({
+            where: {
+                id: taskId,
+            },
+            data: {
+                columnId: targetColumnId,
+                updatedAt: new Date(), // Explicitly update the timestamp
             },
         });
     }

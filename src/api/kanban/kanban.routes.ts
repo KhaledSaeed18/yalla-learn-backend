@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import KanbanController from './kanban.controller';
-import { createBoardValidation, boardIdValidation, createColumnValidation, columnIdValidation, createTaskValidation, taskIdValidation } from './kanban.validation';
-import { boardCreateLimiter, boardGetLimiter, boardDeleteLimiter, columnCreateLimiter, columnDeleteLimiter, taskCreateLimiter, taskGetLimiter, taskDeleteLimiter } from './kanban.rateLimiting';
+import { createBoardValidation, boardIdValidation, createColumnValidation, columnIdValidation, createTaskValidation, taskIdValidation, moveTaskValidation } from './kanban.validation';
+import { boardCreateLimiter, boardGetLimiter, boardDeleteLimiter, columnCreateLimiter, columnDeleteLimiter, taskCreateLimiter, taskGetLimiter, taskDeleteLimiter, taskMoveLimiter } from './kanban.rateLimiting';
 import { authorize } from '../../middlewares/authorization.middleware';
 
 export default class KanbanRouter {
@@ -87,6 +87,15 @@ export default class KanbanRouter {
             taskDeleteLimiter,
             taskIdValidation,
             this.kanbanController.deleteTask
+        );
+
+        // Task movement route
+        this.router.patch(
+            '/tasks/:taskId/move',
+            authorize,
+            taskMoveLimiter,
+            moveTaskValidation,
+            this.kanbanController.moveTask
         );
     }
 

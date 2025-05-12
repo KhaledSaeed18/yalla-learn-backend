@@ -16,6 +16,7 @@ export default class KanbanController {
         this.createTask = this.createTask.bind(this);
         this.getTaskById = this.getTaskById.bind(this);
         this.deleteTask = this.deleteTask.bind(this);
+        this.moveTask = this.moveTask.bind(this);
     }
 
     // Board methods
@@ -276,6 +277,42 @@ export default class KanbanController {
                 return;
             }
             next(errorHandler(500, (err as Error).message || "Failed to delete task"));
+        }
+    }
+
+    // Task movement method
+    async moveTask(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { taskId } = req.params;
+            const { columnId } = req.body;
+
+            if (!req.user) {
+                return next(errorHandler(401, "User not authenticated"));
+            }
+            const userId = req.user.userId;
+
+            const updatedTask = await this.kanbanService.moveTask(taskId, columnId, userId);
+
+            res.status(200).json({
+                status: "success",
+                statusCode: 200,
+                message: "Task moved successfully",
+                data: { task: updatedTask }
+            });
+        } catch (err) {
+            if ((err as Error).message === "Task not found") {
+                return next(errorHandler(404, "Task not found"));
+            }
+            if ((err as Error).message === "Target column not found") {
+                return next(errorHandler(404, "Target column not found"));
+            }
+            if ((err as Error).message.includes("Unauthorized")) {
+                return next(errorHandler(403, "You don't have permission to move this task"));
+            }
+            if ((err as Error).message.includes("different board")) {
+                return next(errorHandler(400, "Cannot move task to a column in a different board"));
+            }
+            next(errorHandler(500, (err as Error).message || "Failed to move task"));
         }
     }
 }

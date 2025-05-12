@@ -67,3 +67,11 @@ export const taskDeleteLimiter = rateLimit({
         next(errorHandler(429, "Too many task deletion attempts, please try again later"));
     }
 });
+
+export const taskMoveLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100, // 100 requests per 15 minutes
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many task move attempts, please try again later"));
+    }
+});

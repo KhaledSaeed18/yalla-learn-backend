@@ -73,3 +73,13 @@ export const taskIdValidation = [
         .isUUID()
         .withMessage('Invalid task ID format')
 ];
+
+// Move task validation
+export const moveTaskValidation = [
+    param('taskId')
+        .isUUID()
+        .withMessage('Invalid task ID format'),
+    body('columnId')
+        .isUUID()
+        .withMessage('Invalid target column ID format')
+];
