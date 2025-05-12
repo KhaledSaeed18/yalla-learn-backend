@@ -29,7 +29,7 @@ export default class KanbanController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const board = await this.kanbanService.createBoard({ title }, userId);
 
@@ -49,7 +49,7 @@ export default class KanbanController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const boards = await this.kanbanService.getBoards(userId);
 
@@ -75,7 +75,7 @@ export default class KanbanController {
             const board = await this.kanbanService.getBoardById(id);
 
             // Check if the board belongs to the user
-            if (board.userId !== req.user.id) {
+            if (board.userId !== req.user.userId) {
                 return next(errorHandler(403, "Unauthorized - You can only view your own boards"));
             }
 
@@ -102,7 +102,7 @@ export default class KanbanController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const board = await this.kanbanService.updateBoard(id, { title }, userId);
 
@@ -132,7 +132,7 @@ export default class KanbanController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             await this.kanbanService.deleteBoard(id, userId);
 
@@ -163,7 +163,7 @@ export default class KanbanController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const column = await this.kanbanService.createColumn(boardId, { title, isDefault, order }, userId);
 
@@ -194,7 +194,7 @@ export default class KanbanController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const column = await this.kanbanService.updateColumn(id, { title, order, isDefault }, userId);
 
@@ -224,7 +224,7 @@ export default class KanbanController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             await this.kanbanService.deleteColumn(id, userId);
 
@@ -263,7 +263,7 @@ export default class KanbanController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const task = await this.kanbanService.createTask(
                 columnId,
@@ -323,7 +323,7 @@ export default class KanbanController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const task = await this.kanbanService.updateTask(
                 id,
@@ -372,7 +372,7 @@ export default class KanbanController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             await this.kanbanService.deleteTask(id, userId);
 

@@ -103,7 +103,7 @@ export default class QAController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const question = await this.qaService.createQuestion({ title, slug, content, tags }, userId);
 
@@ -165,7 +165,7 @@ export default class QAController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
             const { questions, pagination } = await this.qaService.getQuestions({
                 ...req.query,
                 userId
@@ -189,7 +189,7 @@ export default class QAController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
             const { title, content, status, tags } = req.body;
 
             const question = await this.qaService.updateQuestion(id, userId, {
@@ -226,7 +226,7 @@ export default class QAController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
             const isAdmin = req.user.role === 'ADMIN';
 
             await this.qaService.deleteQuestion(id, userId, isAdmin);
@@ -257,7 +257,7 @@ export default class QAController {
                 return next(errorHandler(401, "Authentication required"));
             }
 
-            await this.qaService.deleteQuestion(id, req.user.id, true);
+            await this.qaService.deleteQuestion(id, req.user.userId, true);
 
             res.status(200).json({
                 status: "success",
@@ -282,7 +282,7 @@ export default class QAController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const answer = await this.qaService.createAnswer({ content, questionId }, userId);
 
@@ -347,7 +347,7 @@ export default class QAController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const answer = await this.qaService.updateAnswer(id, userId, content);
 
@@ -378,7 +378,7 @@ export default class QAController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
             const isAdmin = req.user.role === 'ADMIN';
 
             await this.qaService.deleteAnswer(id, userId, isAdmin);
@@ -410,7 +410,7 @@ export default class QAController {
                 return next(errorHandler(401, "Authentication required"));
             }
 
-            await this.qaService.deleteAnswer(id, req.user.id, true);
+            await this.qaService.deleteAnswer(id, req.user.userId, true);
 
             res.status(200).json({
                 status: "success",
@@ -434,7 +434,7 @@ export default class QAController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const result = await this.qaService.voteAnswer(userId, answerId, type);
 
@@ -461,7 +461,7 @@ export default class QAController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const answer = await this.qaService.acceptAnswer(questionId, answerId, userId);
 
@@ -496,7 +496,7 @@ export default class QAController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const answer = await this.qaService.unacceptAnswer(questionId, answerId, userId);
 
@@ -529,7 +529,7 @@ export default class QAController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
             const { questionId, answerId } = req.query as { questionId?: string, answerId?: string };
 
             const votes = await this.qaService.getUserVotes(userId, questionId, answerId);

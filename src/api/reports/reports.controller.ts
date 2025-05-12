@@ -26,7 +26,7 @@ export default class ReportController {
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
             }
-            const userId = req.user.id;
+            const userId = req.user.userId;
 
             const report = await this.reportService.createReport(userId, req.body);
 
@@ -48,7 +48,7 @@ export default class ReportController {
             }
 
             const isAdmin = req.user.role === 'ADMIN';
-            const userId = !isAdmin ? req.user.id : undefined;
+            const userId = !isAdmin ? req.user.userId : undefined;
 
             const page = req.query.page ? parseInt(req.query.page as string) : 1;
             const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
@@ -83,7 +83,7 @@ export default class ReportController {
             const { id } = req.params;
             const isAdmin = req.user.role === 'ADMIN';
 
-            const report = await this.reportService.getReportById(id, req.user.id, isAdmin);
+            const report = await this.reportService.getReportById(id, req.user.userId, isAdmin);
 
             res.status(200).json(this.formatResponse(
                 200,
@@ -113,7 +113,7 @@ export default class ReportController {
             const { id } = req.params;
             const isAdmin = req.user.role === 'ADMIN';
 
-            await this.reportService.deleteReport(id, req.user.id, isAdmin);
+            await this.reportService.deleteReport(id, req.user.userId, isAdmin);
 
             res.status(200).json(this.formatResponse(
                 200,
