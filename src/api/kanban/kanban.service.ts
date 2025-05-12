@@ -36,8 +36,8 @@ export default class KanbanService {
         // Create default columns
         const defaultColumns = [
             { title: 'Todo', order: 0, isDefault: true },
-            { title: 'In Progress', order: 1, isDefault: false },
-            { title: 'Done', order: 2, isDefault: false },
+            { title: 'In Progress', order: 1, isDefault: true },
+            { title: 'Done', order: 2, isDefault: true },
         ];
 
         for (const column of defaultColumns) {
