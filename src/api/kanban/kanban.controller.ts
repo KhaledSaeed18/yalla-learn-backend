@@ -10,14 +10,11 @@ export default class KanbanController {
         this.createBoard = this.createBoard.bind(this);
         this.getBoards = this.getBoards.bind(this);
         this.getBoardById = this.getBoardById.bind(this);
-        this.updateBoard = this.updateBoard.bind(this);
         this.deleteBoard = this.deleteBoard.bind(this);
         this.createColumn = this.createColumn.bind(this);
-        this.updateColumn = this.updateColumn.bind(this);
         this.deleteColumn = this.deleteColumn.bind(this);
         this.createTask = this.createTask.bind(this);
         this.getTaskById = this.getTaskById.bind(this);
-        this.updateTask = this.updateTask.bind(this);
         this.deleteTask = this.deleteTask.bind(this);
     }
 
@@ -94,37 +91,6 @@ export default class KanbanController {
         }
     }
 
-    async updateBoard(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { id } = req.params;
-            const { title } = req.body;
-
-            if (!req.user) {
-                return next(errorHandler(401, "Authentication required"));
-            }
-            const userId = req.user.userId;
-
-            const board = await this.kanbanService.updateBoard(id, { title }, userId);
-
-            res.status(200).json({
-                status: "success",
-                statusCode: 200,
-                message: "Board updated successfully",
-                data: { board }
-            });
-        } catch (err) {
-            if ((err as Error).message === "Board not found") {
-                next(errorHandler(404, "Board not found"));
-                return;
-            }
-            if ((err as Error).message.includes("Unauthorized")) {
-                next(errorHandler(403, (err as Error).message));
-                return;
-            }
-            next(errorHandler(500, (err as Error).message || "Failed to update board"));
-        }
-    }
-
     async deleteBoard(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;
@@ -186,37 +152,6 @@ export default class KanbanController {
         }
     }
 
-    async updateColumn(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { id } = req.params;
-            const { title, order, isDefault } = req.body;
-
-            if (!req.user) {
-                return next(errorHandler(401, "Authentication required"));
-            }
-            const userId = req.user.userId;
-
-            const column = await this.kanbanService.updateColumn(id, { title, order, isDefault }, userId);
-
-            res.status(200).json({
-                status: "success",
-                statusCode: 200,
-                message: "Column updated successfully",
-                data: { column }
-            });
-        } catch (err) {
-            if ((err as Error).message === "Column not found") {
-                next(errorHandler(404, "Column not found"));
-                return;
-            }
-            if ((err as Error).message.includes("Unauthorized")) {
-                next(errorHandler(403, (err as Error).message));
-                return;
-            }
-            next(errorHandler(500, (err as Error).message || "Failed to update column"));
-        }
-    }
-
     async deleteColumn(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;
@@ -258,7 +193,7 @@ export default class KanbanController {
     async createTask(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { columnId } = req.params;
-            const { title, description, priority, dueDate, tags } = req.body;
+            const { title, description, priority, dueDate } = req.body;
 
             if (!req.user) {
                 return next(errorHandler(401, "Authentication required"));
@@ -267,7 +202,7 @@ export default class KanbanController {
 
             const task = await this.kanbanService.createTask(
                 columnId,
-                { title, description, priority, dueDate: dueDate ? new Date(dueDate) : undefined, tags },
+                { title, description, priority, dueDate: dueDate ? new Date(dueDate) : undefined },
                 userId
             );
 
@@ -312,56 +247,6 @@ export default class KanbanController {
                 return;
             }
             next(errorHandler(500, (err as Error).message || "Failed to retrieve task"));
-        }
-    }
-
-    async updateTask(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const { id } = req.params;
-            const { title, description, priority, dueDate, columnId, tags } = req.body;
-
-            if (!req.user) {
-                return next(errorHandler(401, "Authentication required"));
-            }
-            const userId = req.user.userId;
-
-            const task = await this.kanbanService.updateTask(
-                id,
-                {
-                    title,
-                    description,
-                    priority,
-                    dueDate: dueDate === null ? null : (dueDate ? new Date(dueDate) : undefined),
-                    columnId,
-                    tags
-                },
-                userId
-            );
-
-            res.status(200).json({
-                status: "success",
-                statusCode: 200,
-                message: "Task updated successfully",
-                data: { task }
-            });
-        } catch (err) {
-            if ((err as Error).message === "Task not found") {
-                next(errorHandler(404, "Task not found"));
-                return;
-            }
-            if ((err as Error).message === "Target column not found") {
-                next(errorHandler(404, "Target column not found"));
-                return;
-            }
-            if ((err as Error).message === "Cannot move task to a column in a different board") {
-                next(errorHandler(400, "Cannot move task to a column in a different board"));
-                return;
-            }
-            if ((err as Error).message.includes("Unauthorized")) {
-                next(errorHandler(403, (err as Error).message));
-                return;
-            }
-            next(errorHandler(500, (err as Error).message || "Failed to update task"));
         }
     }
 

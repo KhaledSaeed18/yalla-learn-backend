@@ -176,9 +176,8 @@ model Tag {
   name      String     @unique
   questions Question[] @relation("QuestionTags")
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  TaskTag   TaskTag[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model AnswerVote {
@@ -331,9 +330,8 @@ model Task {
   columnId    String
   userId      String
 
-  column   Column    @relation(fields: [columnId], references: [id], onDelete: Cascade)
-  user     User      @relation(fields: [userId], references: [id])
-  taskTags TaskTag[]
+  column Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -349,15 +347,6 @@ enum TaskPriority {
   MEDIUM
   HIGH
   URGENT
-}
-
-model TaskTag {
-  taskId String
-  tagId  String
-  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@id([taskId, tagId])
 }
 
 model AIConversation {

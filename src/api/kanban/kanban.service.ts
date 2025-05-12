@@ -15,26 +15,6 @@ interface CreateTaskData {
     description?: string;
     priority: TaskPriority;
     dueDate?: Date;
-    tags?: string[];
-}
-
-interface UpdateTaskData {
-    title?: string;
-    description?: string;
-    priority?: TaskPriority;
-    dueDate?: Date | null;
-    columnId?: string;
-    tags?: string[];
-}
-
-interface UpdateBoardData {
-    title?: string;
-}
-
-interface UpdateColumnData {
-    title?: string;
-    order?: number;
-    isDefault?: boolean;
 }
 
 export default class KanbanService {
@@ -79,20 +59,6 @@ export default class KanbanService {
             },
             include: {
                 columns: {
-                    include: {
-                        tasks: {
-                            include: {
-                                taskTags: {
-                                    include: {
-                                        tag: true,
-                                    },
-                                },
-                            },
-                            orderBy: {
-                                createdAt: 'desc',
-                            },
-                        },
-                    },
                     orderBy: {
                         order: 'asc',
                     },
@@ -113,13 +79,6 @@ export default class KanbanService {
                 columns: {
                     include: {
                         tasks: {
-                            include: {
-                                taskTags: {
-                                    include: {
-                                        tag: true,
-                                    },
-                                },
-                            },
                             orderBy: {
                                 createdAt: 'desc',
                             },
@@ -137,40 +96,6 @@ export default class KanbanService {
         }
 
         return board;
-    }
-
-    public async updateBoard(boardId: string, data: UpdateBoardData, userId: string) {
-        // Check ownership
-        const board = await this.prisma.board.findUnique({
-            where: {
-                id: boardId,
-            },
-        });
-
-        if (!board) {
-            throw new Error('Board not found');
-        }
-
-        if (board.userId !== userId) {
-            throw new Error('Unauthorized - You can only update your own boards');
-        }
-
-        return this.prisma.board.update({
-            where: {
-                id: boardId,
-            },
-            data,
-            include: {
-                columns: {
-                    include: {
-                        tasks: true,
-                    },
-                    orderBy: {
-                        order: 'asc',
-                    },
-                },
-            },
-        });
     }
 
     public async deleteBoard(boardId: string, userId: string) {
@@ -237,33 +162,6 @@ export default class KanbanService {
         });
     }
 
-    public async updateColumn(columnId: string, data: UpdateColumnData, userId: string) {
-        // Check ownership
-        const column = await this.prisma.column.findUnique({
-            where: {
-                id: columnId,
-            },
-            include: {
-                board: true,
-            },
-        });
-
-        if (!column) {
-            throw new Error('Column not found');
-        }
-
-        if (column.board.userId !== userId) {
-            throw new Error('Unauthorized - You can only update columns on your own boards');
-        }
-
-        return this.prisma.column.update({
-            where: {
-                id: columnId,
-            },
-            data,
-        });
-    }
-
     public async deleteColumn(columnId: string, userId: string) {
         // Check ownership
         const column = await this.prisma.column.findUnique({
@@ -321,45 +219,16 @@ export default class KanbanService {
             throw new Error('Unauthorized - You can only add tasks to your own boards');
         }
 
-        // Begin transaction for task creation and tags
-        const task = await this.prisma.$transaction(async (tx) => {
-            // Create the task
-            const newTask = await tx.task.create({
-                data: {
-                    title: data.title,
-                    description: data.description,
-                    priority: data.priority,
-                    dueDate: data.dueDate,
-                    columnId,
-                    userId,
-                },
-            });
-
-            // Handle tags if provided
-            if (data.tags && data.tags.length > 0) {
-                for (const tagName of data.tags) {
-                    // Find or create the tag
-                    let tag = await tx.tag.findUnique({
-                        where: { name: tagName },
-                    });
-
-                    if (!tag) {
-                        tag = await tx.tag.create({
-                            data: { name: tagName },
-                        });
-                    }
-
-                    // Create the task-tag relationship
-                    await tx.taskTag.create({
-                        data: {
-                            taskId: newTask.id,
-                            tagId: tag.id,
-                        },
-                    });
-                }
-            }
-
-            return newTask;
+        // Create the task
+        const task = await this.prisma.task.create({
+            data: {
+                title: data.title,
+                description: data.description,
+                priority: data.priority,
+                dueDate: data.dueDate,
+                columnId,
+                userId,
+            },
         });
 
         return this.getTaskById(task.id);
@@ -369,14 +238,7 @@ export default class KanbanService {
         const task = await this.prisma.task.findUnique({
             where: {
                 id: taskId,
-            },
-            include: {
-                taskTags: {
-                    include: {
-                        tag: true,
-                    },
-                },
-            },
+            }
         });
 
         if (!task) {
@@ -386,103 +248,6 @@ export default class KanbanService {
         return task;
     }
 
-    public async updateTask(taskId: string, data: UpdateTaskData, userId: string) {
-        // Check ownership
-        const task = await this.prisma.task.findUnique({
-            where: {
-                id: taskId,
-            },
-            include: {
-                column: {
-                    include: {
-                        board: true,
-                    },
-                },
-                taskTags: true,
-            },
-        });
-
-        if (!task) {
-            throw new Error('Task not found');
-        }
-
-        if (task.userId !== userId && task.column.board.userId !== userId) {
-            throw new Error('Unauthorized - You can only update your own tasks');
-        }
-
-        // If moving to another column, verify the column is in the same board
-        if (data.columnId && data.columnId !== task.columnId) {
-            const targetColumn = await this.prisma.column.findUnique({
-                where: {
-                    id: data.columnId,
-                },
-                include: {
-                    board: true,
-                },
-            });
-
-            if (!targetColumn) {
-                throw new Error('Target column not found');
-            }
-
-            if (targetColumn.board.id !== task.column.board.id) {
-                throw new Error('Cannot move task to a column in a different board');
-            }
-        }
-
-        // Begin transaction for task update and tags
-        const updatedTask = await this.prisma.$transaction(async (tx) => {
-            // Update the task
-            const updated = await tx.task.update({
-                where: {
-                    id: taskId,
-                },
-                data: {
-                    title: data.title,
-                    description: data.description,
-                    priority: data.priority,
-                    dueDate: data.dueDate === null ? null : data.dueDate,
-                    columnId: data.columnId,
-                },
-            });
-
-            // Handle tags if provided
-            if (data.tags) {
-                // Delete existing task-tag relationships
-                await tx.taskTag.deleteMany({
-                    where: {
-                        taskId,
-                    },
-                });
-
-                // Create new task-tag relationships
-                for (const tagName of data.tags) {
-                    // Find or create the tag
-                    let tag = await tx.tag.findUnique({
-                        where: { name: tagName },
-                    });
-
-                    if (!tag) {
-                        tag = await tx.tag.create({
-                            data: { name: tagName },
-                        });
-                    }
-
-                    // Create the task-tag relationship
-                    await tx.taskTag.create({
-                        data: {
-                            taskId,
-                            tagId: tag.id,
-                        },
-                    });
-                }
-            }
-
-            return updated;
-        });
-
-        return this.getTaskById(updatedTask.id);
-    }
 
     public async deleteTask(taskId: string, userId: string) {
         // Check ownership

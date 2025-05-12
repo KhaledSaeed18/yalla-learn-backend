@@ -18,14 +18,6 @@ export const boardGetLimiter = rateLimit({
     }
 });
 
-export const boardUpdateLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20, // 20 requests per 15 minutes
-    handler: (_req, _res, next) => {
-        next(errorHandler(429, "Too many board update attempts, please try again later"));
-    }
-});
-
 export const boardDeleteLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 10, // 10 requests per 15 minutes
@@ -40,14 +32,6 @@ export const columnCreateLimiter = rateLimit({
     max: 20, // 20 requests per 15 minutes
     handler: (_req, _res, next) => {
         next(errorHandler(429, "Too many column creation attempts, please try again later"));
-    }
-});
-
-export const columnUpdateLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 30, // 30 requests per 15 minutes
-    handler: (_req, _res, next) => {
-        next(errorHandler(429, "Too many column update attempts, please try again later"));
     }
 });
 
@@ -73,14 +57,6 @@ export const taskGetLimiter = rateLimit({
     max: 200, // 200 requests per 15 minutes
     handler: (_req, _res, next) => {
         next(errorHandler(429, "Too many task retrieval attempts, please try again later"));
-    }
-});
-
-export const taskUpdateLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100, // 100 requests per 15 minutes
-    handler: (_req, _res, next) => {
-        next(errorHandler(429, "Too many task update attempts, please try again later"));
     }
 });
 
