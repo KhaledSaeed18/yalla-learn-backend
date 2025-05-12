@@ -2,6 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ExpenseTrackerService } from "./expense-tracker.service";
 import { errorHandler } from "../../utils/errorHandler";
+import { ExpenseCategoryType } from "@prisma/client";
 
 export default class ExpenseTrackerController {
     private expenseTrackerService: ExpenseTrackerService;
@@ -13,13 +14,6 @@ export default class ExpenseTrackerController {
 
     // Bind all methods to maintain 'this' context
     private bindMethods() {
-        // Expense Category methods
-        this.createExpenseCategory = this.createExpenseCategory.bind(this);
-        this.getExpenseCategories = this.getExpenseCategories.bind(this);
-        this.getExpenseCategoryById = this.getExpenseCategoryById.bind(this);
-        this.updateExpenseCategory = this.updateExpenseCategory.bind(this);
-        this.deleteExpenseCategory = this.deleteExpenseCategory.bind(this);
-
         // Expense methods
         this.createExpense = this.createExpense.bind(this);
         this.getExpenses = this.getExpenses.bind(this);
@@ -83,116 +77,6 @@ export default class ExpenseTrackerController {
             message,
             data
         };
-    }
-
-    // ************************ EXPENSE CATEGORY CONTROLLERS ************************ //
-
-    async createExpenseCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const category = await this.expenseTrackerService.createExpenseCategory(userId, req.body);
-
-            res.status(201).json(this.formatResponse(
-                201,
-                "Expense category created successfully",
-                { category }
-            ));
-        } catch (err) {
-            if ((err as Error).message.includes("already exists")) {
-                next(errorHandler(409, (err as Error).message));
-                return;
-            }
-            next(errorHandler(500, (err as Error).message || "Failed to create expense category"));
-        }
-    }
-
-    async getExpenseCategories(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const categories = await this.expenseTrackerService.getExpenseCategories(userId);
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Expense categories retrieved successfully",
-                { categories }
-            ));
-        } catch (err) {
-            next(errorHandler(500, (err as Error).message || "Failed to retrieve expense categories"));
-        }
-    }
-
-    async getExpenseCategoryById(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const categoryId = req.params.id;
-            const category = await this.expenseTrackerService.getExpenseCategoryById(categoryId, userId);
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Expense category retrieved successfully",
-                { category }
-            ));
-        } catch (err) {
-            if ((err as Error).message === "Expense category not found") {
-                next(errorHandler(404, "Expense category not found"));
-                return;
-            }
-            next(errorHandler(500, (err as Error).message || "Failed to retrieve expense category"));
-        }
-    }
-
-    async updateExpenseCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const categoryId = req.params.id;
-            const updatedCategory = await this.expenseTrackerService.updateExpenseCategory(
-                categoryId,
-                userId,
-                req.body
-            );
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Expense category updated successfully",
-                { category: updatedCategory }
-            ));
-        } catch (err) {
-            const message = (err as Error).message;
-            if (message === "Expense category not found") {
-                next(errorHandler(404, "Expense category not found"));
-                return;
-            }
-            if (message.includes("already exists")) {
-                next(errorHandler(409, message));
-                return;
-            }
-            next(errorHandler(500, message || "Failed to update expense category"));
-        }
-    }
-
-    async deleteExpenseCategory(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const categoryId = req.params.id;
-            await this.expenseTrackerService.deleteExpenseCategory(categoryId, userId);
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Expense category deleted successfully",
-                null
-            ));
-        } catch (err) {
-            const message = (err as Error).message;
-            if (message === "Expense category not found") {
-                next(errorHandler(404, "Expense category not found"));
-                return;
-            }
-            if (message.includes("associated with")) {
-                next(errorHandler(400, message));
-                return;
-            }
-            next(errorHandler(500, message || "Failed to delete expense category"));
-        }
     }
 
     // ************************ EXPENSE CONTROLLERS ************************ //
@@ -884,13 +768,13 @@ export default class ExpenseTrackerController {
             // Parse query parameters
             const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
             const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
-            let categoryIds: string[] | undefined = undefined;
+            let categories: ExpenseCategoryType[] | undefined = undefined;
 
-            if (req.query.categoryIds) {
-                if (typeof req.query.categoryIds === 'string') {
-                    categoryIds = req.query.categoryIds.split(',');
-                } else if (Array.isArray(req.query.categoryIds)) {
-                    categoryIds = req.query.categoryIds as string[];
+            if (req.query.categories) {
+                if (typeof req.query.categories === 'string') {
+                    categories = req.query.categories.split(',') as ExpenseCategoryType[];
+                } else if (Array.isArray(req.query.categories)) {
+                    categories = req.query.categories as ExpenseCategoryType[];
                 }
             }
 
@@ -899,7 +783,7 @@ export default class ExpenseTrackerController {
             const comparison = await this.expenseTrackerService.getBudgetVsActual(userId, {
                 startDate,
                 endDate,
-                categoryIds,
+                categories,
                 semesterId
             });
 

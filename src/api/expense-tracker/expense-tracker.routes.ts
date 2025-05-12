@@ -3,7 +3,7 @@ import ExpenseTrackerController from "./expense-tracker.controller";
 import { authorize } from "../../middlewares/authorization.middleware";
 import { sanitizeRequestBody } from "../../middlewares/sanitizeBody.middleware";
 import { createExpenseTrackerLimiter, modifyExpenseTrackerLimiter, reportExpenseTrackerLimiter, standardExpenseTrackerLimiter } from "./expense-tracker.rateLimiting";
-import { validateBudget, validateExpense, validateExpenseCategory, validateIncome, validatePaymentSchedule, validateSavingsGoal, validateSemester, validateExpenseFilters, validateIncomeFilters, validateBudgetComparison, validateExpenseIncomeComparison, validateDashboardStats } from "./expense-tracker.validation";
+import { validateBudget, validateExpense, validateIncome, validatePaymentSchedule, validateSavingsGoal, validateSemester, validateExpenseFilters, validateIncomeFilters, validateBudgetComparison, validateExpenseIncomeComparison, validateDashboardStats } from "./expense-tracker.validation";
 
 export default class ExpenseTrackerRouter {
     private router: Router;
@@ -18,41 +18,6 @@ export default class ExpenseTrackerRouter {
     private initRoutes(): void {
         // Apply authorize middleware to all routes
         this.router.use(authorize);
-
-        // Expense Category routes
-        this.router.post(
-            "/categories",
-            createExpenseTrackerLimiter,
-            sanitizeRequestBody,
-            validateExpenseCategory,
-            this.expenseTrackerController.createExpenseCategory
-        );
-
-        this.router.get(
-            "/categories",
-            standardExpenseTrackerLimiter,
-            this.expenseTrackerController.getExpenseCategories
-        );
-
-        this.router.get(
-            "/categories/:id",
-            standardExpenseTrackerLimiter,
-            this.expenseTrackerController.getExpenseCategoryById
-        );
-
-        this.router.put(
-            "/categories/:id",
-            modifyExpenseTrackerLimiter,
-            sanitizeRequestBody,
-            validateExpenseCategory,
-            this.expenseTrackerController.updateExpenseCategory
-        );
-
-        this.router.delete(
-            "/categories/:id",
-            modifyExpenseTrackerLimiter,
-            this.expenseTrackerController.deleteExpenseCategory
-        );
 
         // Expense routes
         this.router.post(

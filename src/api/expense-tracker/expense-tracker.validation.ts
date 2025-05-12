@@ -3,17 +3,8 @@ import { Request, Response, NextFunction } from 'express';
 import { errorHandler } from '../../utils/errorHandler';
 import { BudgetPeriod, PaymentMethod, Term, UniversityPaymentType } from '@prisma/client';
 
-// Expense Category validation schema
-const expenseCategorySchema = z.object({
-    name: z.string()
-        .trim()
-        .min(1, "Category name is required")
-        .max(50, "Category name cannot exceed 50 characters"),
-    description: z.string().trim().nullable().optional(),
-    icon: z.string().trim().nullable().optional(),
-    isDefault: z.boolean().optional(),
-    color: z.string().trim().nullable().optional(),
-});
+// Import the ExpenseCategoryType enum
+import { ExpenseCategoryType } from '@prisma/client';
 
 // Expense validation schema
 const expenseSchema = z.object({
@@ -22,7 +13,7 @@ const expenseSchema = z.object({
         .finite("Amount must be a valid number"),
     description: z.string().trim().nullable().optional(),
     date: z.coerce.date(),
-    categoryId: z.string().trim().min(1, "Category ID is required"),
+    category: z.nativeEnum(ExpenseCategoryType),
     paymentMethod: z.nativeEnum(PaymentMethod).nullable().optional(),
     location: z.string().trim().nullable().optional(),
     semesterId: z.string().trim().nullable().optional(),
@@ -47,7 +38,7 @@ const budgetSchema = z.object({
     period: z.nativeEnum(BudgetPeriod),
     startDate: z.coerce.date(),
     endDate: z.coerce.date().nullable().optional(),
-    categoryId: z.string().trim().min(1, "Category ID is required"),
+    category: z.nativeEnum(ExpenseCategoryType),
     semesterId: z.string().trim().nullable().optional(),
 });
 
@@ -102,7 +93,7 @@ const paginationSchema = z.object({
 
 // Expense filter schema
 const expenseFilterSchema = dateFilterSchema.extend({
-    categoryIds: z.array(z.string()).optional(),
+    categories: z.array(z.nativeEnum(ExpenseCategoryType)).optional(),
     semesterId: z.string().optional(),
     minAmount: z.number().optional(),
     maxAmount: z.number().optional(),
@@ -118,7 +109,7 @@ const incomeFilterSchema = dateFilterSchema.extend({
 
 // Budget comparison filter schema
 const budgetComparisonSchema = dateFilterSchema.extend({
-    categoryIds: z.array(z.string()).optional(),
+    categories: z.array(z.nativeEnum(ExpenseCategoryType)).optional(),
     semesterId: z.string().optional(),
 });
 
@@ -210,7 +201,6 @@ const validateQuery = (schema: z.ZodSchema) => (req: Request, res: Response, nex
 };
 
 // Export validation middlewares
-export const validateExpenseCategory = validate(expenseCategorySchema);
 export const validateExpense = validate(expenseSchema);
 export const validateIncome = validate(incomeSchema);
 export const validateBudget = validate(budgetSchema);

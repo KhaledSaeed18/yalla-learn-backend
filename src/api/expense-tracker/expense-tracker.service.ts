@@ -1,21 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BudgetPeriod, PaymentMethod, PrismaClient, Term, UniversityPaymentType } from '@prisma/client';
+import { BudgetPeriod, ExpenseCategoryType, PaymentMethod, PrismaClient, Term, UniversityPaymentType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // DTOs for data transfer
-interface CreateExpenseCategoryDTO {
-    name: string;
-    description?: string | null;
-    icon?: string | null;
-    isDefault?: boolean;
-    color?: string | null;
-}
-
 interface CreateExpenseDTO {
     amount: number;
     description?: string | null;
     date: Date;
-    categoryId: string;
+    category: ExpenseCategoryType;
     paymentMethod?: PaymentMethod | null;
     location?: string | null;
     semesterId?: string | null;
@@ -34,7 +26,7 @@ interface CreateBudgetDTO {
     period: BudgetPeriod;
     startDate: Date;
     endDate?: Date | null;
-    categoryId: string;
+    category: ExpenseCategoryType;
     semesterId?: string | null;
 }
 
@@ -70,7 +62,7 @@ interface CreateSavingsGoalDTO {
 interface ExpenseFilterOptions {
     startDate?: Date;
     endDate?: Date;
-    categoryIds?: string[];
+    categories?: ExpenseCategoryType[];
     semesterId?: string;
     minAmount?: number;
     maxAmount?: number;
@@ -100,178 +92,6 @@ export class ExpenseTrackerService {
         this.prisma = new PrismaClient();
     }
 
-    // ************************ EXPENSE CATEGORY METHODS ************************ //
-
-    /**
-     * Create a new expense category for a user
-     */
-    async createExpenseCategory(userId: string, data: CreateExpenseCategoryDTO) {
-        try {
-            // Check if category with same name already exists for this user
-            const existingCategory = await this.prisma.expenseCategory.findFirst({
-                where: {
-                    name: data.name,
-                    userId,
-                },
-            });
-
-            if (existingCategory) {
-                throw new Error(`Category with name "${data.name}" already exists`);
-            }
-
-            return this.prisma.expenseCategory.create({
-                data: {
-                    ...data,
-                    userId,
-                },
-            });
-        } catch (error) {
-            console.error('Error creating expense category:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get all expense categories for a user
-     */
-    async getExpenseCategories(userId: string) {
-        try {
-            return this.prisma.expenseCategory.findMany({
-                where: {
-                    userId,
-                },
-                orderBy: {
-                    name: 'asc',
-                },
-                include: {
-                    _count: {
-                        select: {
-                            expenses: true,
-                        }
-                    }
-                }
-            });
-        } catch (error) {
-            console.error('Error getting expense categories:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get expense category by ID
-     */
-    async getExpenseCategoryById(id: string, userId: string) {
-        try {
-            const category = await this.prisma.expenseCategory.findFirst({
-                where: {
-                    id,
-                    userId,
-                },
-                include: {
-                    _count: {
-                        select: {
-                            expenses: true,
-                        }
-                    }
-                }
-            });
-
-            if (!category) {
-                throw new Error('Expense category not found');
-            }
-
-            return category;
-        } catch (error) {
-            console.error('Error getting expense category by ID:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Update an expense category
-     */
-    async updateExpenseCategory(id: string, userId: string, data: Partial<CreateExpenseCategoryDTO>) {
-        try {
-            // Check if category exists and belongs to user
-            const category = await this.prisma.expenseCategory.findFirst({
-                where: {
-                    id,
-                    userId,
-                },
-            });
-
-            if (!category) {
-                throw new Error('Expense category not found');
-            }
-
-            // Check if the updated name conflicts with another category
-            if (data.name && data.name !== category.name) {
-                const nameExists = await this.prisma.expenseCategory.findFirst({
-                    where: {
-                        name: data.name,
-                        userId,
-                        id: { not: id }
-                    },
-                });
-
-                if (nameExists) {
-                    throw new Error(`Category with name "${data.name}" already exists`);
-                }
-            }
-
-            return this.prisma.expenseCategory.update({
-                where: { id },
-                data,
-            });
-        } catch (error) {
-            console.error('Error updating expense category:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Delete an expense category
-     */
-    async deleteExpenseCategory(id: string, userId: string) {
-        try {
-            // Check if category exists and belongs to user
-            const category = await this.prisma.expenseCategory.findFirst({
-                where: {
-                    id,
-                    userId,
-                },
-                include: {
-                    _count: {
-                        select: {
-                            expenses: true,
-                            budgets: true,
-                        }
-                    }
-                }
-            });
-
-            if (!category) {
-                throw new Error('Expense category not found');
-            }
-
-            // Check if category is in use
-            if (category._count.expenses > 0) {
-                throw new Error('Cannot delete category that is associated with expenses');
-            }
-
-            if (category._count.budgets > 0) {
-                throw new Error('Cannot delete category that is associated with budgets');
-            }
-
-            return this.prisma.expenseCategory.delete({
-                where: { id },
-            });
-        } catch (error) {
-            console.error('Error deleting expense category:', error);
-            throw error;
-        }
-    }
-
     // ************************ EXPENSE METHODS ************************ //
 
     /**
@@ -279,18 +99,6 @@ export class ExpenseTrackerService {
      */
     async createExpense(userId: string, data: CreateExpenseDTO) {
         try {
-            // Verify the category belongs to the user
-            const category = await this.prisma.expenseCategory.findFirst({
-                where: {
-                    id: data.categoryId,
-                    userId,
-                },
-            });
-
-            if (!category) {
-                throw new Error('Invalid expense category');
-            }
-
             // Verify semester if provided
             if (data.semesterId) {
                 const semester = await this.prisma.semester.findFirst({
@@ -311,7 +119,6 @@ export class ExpenseTrackerService {
                     userId,
                 },
                 include: {
-                    category: true,
                     semester: true,
                 },
             });
@@ -329,7 +136,7 @@ export class ExpenseTrackerService {
             const {
                 startDate,
                 endDate,
-                categoryIds,
+                categories,
                 semesterId,
                 minAmount,
                 maxAmount,
@@ -355,9 +162,9 @@ export class ExpenseTrackerService {
             }
 
             // Category filter
-            if (categoryIds && categoryIds.length > 0) {
-                where.categoryId = {
-                    in: categoryIds,
+            if (categories && categories.length > 0) {
+                where.category = {
+                    in: categories,
                 };
             }
 
@@ -392,7 +199,6 @@ export class ExpenseTrackerService {
                     [sortBy]: sortOrder,
                 },
                 include: {
-                    category: true,
                     semester: true,
                 },
             });
@@ -426,7 +232,6 @@ export class ExpenseTrackerService {
                     userId,
                 },
                 include: {
-                    category: true,
                     semester: true,
                 },
             });
@@ -459,20 +264,6 @@ export class ExpenseTrackerService {
                 throw new Error('Expense not found');
             }
 
-            // Verify the category belongs to the user if changing
-            if (data.categoryId && data.categoryId !== expense.categoryId) {
-                const category = await this.prisma.expenseCategory.findFirst({
-                    where: {
-                        id: data.categoryId,
-                        userId,
-                    },
-                });
-
-                if (!category) {
-                    throw new Error('Invalid expense category');
-                }
-            }
-
             // Verify semester if changing
             if (data.semesterId && data.semesterId !== expense.semesterId) {
                 const semester = await this.prisma.semester.findFirst({
@@ -491,7 +282,6 @@ export class ExpenseTrackerService {
                 where: { id },
                 data,
                 include: {
-                    category: true,
                     semester: true,
                 },
             });
@@ -703,18 +493,6 @@ export class ExpenseTrackerService {
      */
     async createBudget(userId: string, data: CreateBudgetDTO) {
         try {
-            // Verify the category belongs to the user
-            const category = await this.prisma.expenseCategory.findFirst({
-                where: {
-                    id: data.categoryId,
-                    userId,
-                },
-            });
-
-            if (!category) {
-                throw new Error('Invalid expense category');
-            }
-
             // Verify semester if provided
             if (data.semesterId) {
                 const semester = await this.prisma.semester.findFirst({
@@ -735,7 +513,6 @@ export class ExpenseTrackerService {
                     userId,
                 },
                 include: {
-                    category: true,
                     semester: true,
                 },
             });
@@ -749,14 +526,14 @@ export class ExpenseTrackerService {
      * Get budgets for a user with filtering
      */
     async getBudgets(userId: string, options: {
-        categoryId?: string;
+        category?: ExpenseCategoryType;
         semesterId?: string;
         period?: BudgetPeriod;
         includeExpired?: boolean;
     } = {}) {
         try {
             const {
-                categoryId,
+                category,
                 semesterId,
                 period,
                 includeExpired = false,
@@ -768,8 +545,8 @@ export class ExpenseTrackerService {
             };
 
             // Filter by category
-            if (categoryId) {
-                where.categoryId = categoryId;
+            if (category) {
+                where.category = category;
             }
 
             // Filter by semester
@@ -797,7 +574,6 @@ export class ExpenseTrackerService {
                     { period: 'asc' },
                 ],
                 include: {
-                    category: true,
                     semester: true,
                 },
             });
@@ -818,7 +594,6 @@ export class ExpenseTrackerService {
                     userId,
                 },
                 include: {
-                    category: true,
                     semester: true,
                 },
             });
@@ -851,20 +626,6 @@ export class ExpenseTrackerService {
                 throw new Error('Budget not found');
             }
 
-            // Verify the category belongs to the user if changing
-            if (data.categoryId && data.categoryId !== budget.categoryId) {
-                const category = await this.prisma.expenseCategory.findFirst({
-                    where: {
-                        id: data.categoryId,
-                        userId,
-                    },
-                });
-
-                if (!category) {
-                    throw new Error('Invalid expense category');
-                }
-            }
-
             // Verify semester if changing
             if (data.semesterId && data.semesterId !== budget.semesterId) {
                 const semester = await this.prisma.semester.findFirst({
@@ -883,7 +644,6 @@ export class ExpenseTrackerService {
                 where: { id },
                 data,
                 include: {
-                    category: true,
                     semester: true,
                 },
             });
@@ -1543,20 +1303,14 @@ export class ExpenseTrackerService {
                 where.semesterId = semesterId;
             }
 
-            // Get expenses grouped by category
+            // Get expenses
             const expenses = await this.prisma.expense.findMany({
                 where,
-                include: {
-                    category: true,
-                },
             });
 
             // Calculate totals by category
             const categoryMap = new Map<string, {
-                categoryId: string;
-                name: string;
-                color?: string | null;
-                icon?: string | null;
+                category: ExpenseCategoryType;
                 total: number;
                 count: number;
             }>();
@@ -1564,12 +1318,9 @@ export class ExpenseTrackerService {
             let totalAmount = 0;
 
             expenses.forEach(expense => {
-                const categoryId = expense.category.id;
-                const categoryData = categoryMap.get(categoryId) || {
-                    categoryId,
-                    name: expense.category.name,
-                    color: expense.category.color,
-                    icon: expense.category.icon,
+                const category = expense.category;
+                const categoryData = categoryMap.get(category) || {
+                    category,
                     total: 0,
                     count: 0
                 };
@@ -1582,7 +1333,7 @@ export class ExpenseTrackerService {
                 categoryData.count += 1;
                 totalAmount += amount;
 
-                categoryMap.set(categoryId, categoryData);
+                categoryMap.set(category, categoryData);
             });
 
             // Convert to array and add percentage
@@ -1800,14 +1551,14 @@ export class ExpenseTrackerService {
     async getBudgetVsActual(userId: string, options: {
         startDate?: Date;
         endDate?: Date;
-        categoryIds?: string[];
+        categories?: ExpenseCategoryType[];
         semesterId?: string;
     } = {}) {
         try {
             const {
                 startDate,
                 endDate,
-                categoryIds,
+                categories,
                 semesterId,
             } = options;
 
@@ -1839,9 +1590,9 @@ export class ExpenseTrackerService {
             };
 
             // Add category filter if provided
-            if (categoryIds && categoryIds.length > 0) {
-                budgetWhere.categoryId = {
-                    in: categoryIds,
+            if (categories && categories.length > 0) {
+                budgetWhere.category = {
+                    in: categories,
                 };
             }
 
@@ -1853,9 +1604,6 @@ export class ExpenseTrackerService {
             // Get budgets
             const budgets = await this.prisma.budget.findMany({
                 where: budgetWhere,
-                include: {
-                    category: true,
-                },
             });
 
             // Build expense filter
@@ -1868,9 +1616,9 @@ export class ExpenseTrackerService {
             };
 
             // Add category filter if provided
-            if (categoryIds && categoryIds.length > 0) {
-                expenseWhere.categoryId = {
-                    in: categoryIds,
+            if (categories && categories.length > 0) {
+                expenseWhere.category = {
+                    in: categories,
                 };
             }
 
@@ -1882,9 +1630,6 @@ export class ExpenseTrackerService {
             // Get expenses
             const expenses = await this.prisma.expense.findMany({
                 where: expenseWhere,
-                include: {
-                    category: true,
-                },
             });
 
             // Helper function to calculate budget amount for the period
@@ -1945,44 +1690,38 @@ export class ExpenseTrackerService {
 
             // Group budgets by category
             const budgetsByCategory: Record<string, {
-                categoryId: string;
-                name: string;
-                color?: string | null;
-                icon?: string | null;
+                category: ExpenseCategoryType;
                 budgetAmount: number;
             }> = {};
 
             budgets.forEach(budget => {
-                const categoryId = budget.categoryId;
+                const category = budget.category;
 
-                if (!budgetsByCategory[categoryId]) {
-                    budgetsByCategory[categoryId] = {
-                        categoryId,
-                        name: budget.category.name,
-                        color: budget.category.color,
-                        icon: budget.category.icon,
+                if (!budgetsByCategory[category]) {
+                    budgetsByCategory[category] = {
+                        category,
                         budgetAmount: 0,
                     };
                 }
 
-                budgetsByCategory[categoryId].budgetAmount += calculateProRatedBudget(budget);
+                budgetsByCategory[category].budgetAmount += calculateProRatedBudget(budget);
             });
 
             // Group expenses by category
             const expensesByCategory: Record<string, number> = {};
 
             expenses.forEach(expense => {
-                const categoryId = expense.categoryId;
+                const category = expense.category;
                 const amount = expense.amount instanceof Decimal
                     ? expense.amount.toNumber()
                     : Number(expense.amount);
 
-                expensesByCategory[categoryId] = (expensesByCategory[categoryId] || 0) + amount;
+                expensesByCategory[category] = (expensesByCategory[category] || 0) + amount;
             });
 
             // Combine budget and actual for each category
             const categoryAnalysis = Object.values(budgetsByCategory).map(budget => {
-                const actual = expensesByCategory[budget.categoryId] || 0;
+                const actual = expensesByCategory[budget.category] || 0;
                 const remaining = budget.budgetAmount - actual;
                 const percentage = budget.budgetAmount > 0 ? (actual / budget.budgetAmount) * 100 : 0;
 
@@ -2000,23 +1739,16 @@ export class ExpenseTrackerService {
             });
 
             // Add categories with expenses but no budget
-            Object.keys(expensesByCategory).forEach(categoryId => {
-                if (!budgetsByCategory[categoryId]) {
-                    const category = expenses.find(e => e.categoryId === categoryId)?.category;
-
-                    if (category) {
-                        categoryAnalysis.push({
-                            categoryId,
-                            name: category.name,
-                            color: category.color,
-                            icon: category.icon,
-                            budgetAmount: 0,
-                            actualAmount: expensesByCategory[categoryId],
-                            remainingAmount: -expensesByCategory[categoryId],
-                            percentage: 100,
-                            status: 'NO_BUDGET'
-                        });
-                    }
+            Object.keys(expensesByCategory).forEach(category => {
+                if (!budgetsByCategory[category]) {
+                    categoryAnalysis.push({
+                        category: category as ExpenseCategoryType,
+                        budgetAmount: 0,
+                        actualAmount: expensesByCategory[category],
+                        remainingAmount: -expensesByCategory[category],
+                        percentage: 100,
+                        status: 'NO_BUDGET'
+                    });
                 }
             });
 
