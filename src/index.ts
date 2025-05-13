@@ -12,7 +12,6 @@ import BlogRouter from './api/blog/blog.routes';
 import UserRouter from './api/user/user.routes';
 import QARouter from './api/qa/qa.routes';
 import KanbanRouter from './api/kanban/kanban.routes';
-import AIRouter from './api/ai/ai.routes';
 import ListingRouter from './api/listings/listings.routes';
 import ChatRouter from './api/chat/chat.routes';
 import ServiceRouter from './api/services/services.routes';
@@ -66,10 +65,6 @@ app.use(`${baseUrl}/qa`, qaRouter.getRouter());
 // Kanban routes
 const kanbanRouter = new KanbanRouter();
 app.use(`${baseUrl}/kanban`, kanbanRouter.getRouter());
-
-// AI routes
-const aiRouter = new AIRouter();
-app.use(`${baseUrl}/ai`, aiRouter.getRouter());
 
 // Listings routes
 const listingsRouter = new ListingRouter();
