@@ -31,15 +31,15 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  LoginHistory   LoginHistory[]
-  BlogPost       BlogPost[]
-  Question       Question[]
-  Answer         Answer[]
-  AnswerVote     AnswerVote[]
-  Listing        Listing[]
-  GigService     GigService[]
-  Board          Board[]
-  Task           Task[]
+  LoginHistory LoginHistory[]
+  BlogPost     BlogPost[]
+  Question     Question[]
+  Answer       Answer[]
+  AnswerVote   AnswerVote[]
+  Listing      Listing[]
+  GigService   GigService[]
+  Board        Board[]
+  Task         Task[]
 
   // Expense tracker relations
   Expense         Expense[]
@@ -474,4 +474,18 @@ enum UniversityPaymentType {
   INSURANCE
   PARKING
   OTHER
+}
+
+model ContactForm {
+  id      String  @id @default(cuid())
+  name    String
+  email   String
+  subject String
+  message String  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([createdAt])
 }

@@ -16,6 +16,7 @@ import ListingRouter from './api/listings/listings.routes';
 import ChatRouter from './api/chat/chat.routes';
 import ServiceRouter from './api/services/services.routes';
 import ExpenseTrackerRouter from './api/expense-tracker/expense-tracker.routes';
+import ContactRouter from './api/contact/contact.routes';
 
 dotenv.config();
 
@@ -81,6 +82,10 @@ app.use(`${baseUrl}/chat`, chatRouter.getRouter());
 // Expense Tracker routes
 const expenseTrackerRouter = new ExpenseTrackerRouter();
 app.use(`${baseUrl}/expense-tracker`, expenseTrackerRouter.getRouter());
+
+// Contact Form routes
+const contactRouter = new ContactRouter();
+app.use(`${baseUrl}/contact`, contactRouter.getRouter());
 
 // Initialize Socket.io server
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
