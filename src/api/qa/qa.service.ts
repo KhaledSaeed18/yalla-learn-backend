@@ -86,7 +86,12 @@ export class QAService {
 
     // Create a new question
     public async createQuestion(data: { title: string, slug: string, content: string, tags: string[] }, userId: string) {
-        const slug = data.slug
+        // Make sure we have a slug
+        if (!data.slug) {
+            throw new Error("Slug is required");
+        }
+
+        const slug = data.slug;
 
         // Check if slug already exists
         const existingQuestion = await this.prisma.question.findUnique({

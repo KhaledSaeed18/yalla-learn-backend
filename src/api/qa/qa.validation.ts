@@ -14,6 +14,12 @@ const questionSchema = z.object({
         .trim()
         .min(20, "Content is required and must be at least 20 characters"),
 
+    slug: z.string()
+        .trim()
+        .min(3, "Slug is required and must be at least 3 characters")
+        .max(100, "Slug cannot exceed 100 characters")
+        .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
+
     tags: z.array(z.string())
         .optional()
         .default([]),
