@@ -21,7 +21,7 @@ export default class ExpenseTrackerRouter {
 
         // Expense routes
         this.router.post(
-            "/expenses",
+            "/create-expense",
             createExpenseTrackerLimiter,
             sanitizeRequestBody,
             validateExpense,
@@ -29,20 +29,20 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.get(
-            "/expenses",
+            "/get-expenses",
             standardExpenseTrackerLimiter,
             validateExpenseFilters,
             this.expenseTrackerController.getExpenses
         );
 
         this.router.get(
-            "/expenses/:id",
+            "/get-expense/:id",
             standardExpenseTrackerLimiter,
             this.expenseTrackerController.getExpenseById
         );
 
         this.router.put(
-            "/expenses/:id",
+            "/update-expense/:id",
             modifyExpenseTrackerLimiter,
             sanitizeRequestBody,
             validateExpense,
@@ -50,14 +50,14 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.delete(
-            "/expenses/:id",
+            "/delete-expense/:id",
             modifyExpenseTrackerLimiter,
             this.expenseTrackerController.deleteExpense
         );
 
         // Income routes
         this.router.post(
-            "/incomes",
+            "/create-income",
             createExpenseTrackerLimiter,
             sanitizeRequestBody,
             validateIncome,
@@ -65,20 +65,20 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.get(
-            "/incomes",
+            "/get-incomes",
             standardExpenseTrackerLimiter,
             validateIncomeFilters,
             this.expenseTrackerController.getIncomes
         );
 
         this.router.get(
-            "/incomes/:id",
+            "/get-income/:id",
             standardExpenseTrackerLimiter,
             this.expenseTrackerController.getIncomeById
         );
 
         this.router.put(
-            "/incomes/:id",
+            "/update-income/:id",
             modifyExpenseTrackerLimiter,
             sanitizeRequestBody,
             validateIncome,
@@ -86,14 +86,14 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.delete(
-            "/incomes/:id",
+            "/delete-income/:id",
             modifyExpenseTrackerLimiter,
             this.expenseTrackerController.deleteIncome
         );
 
         // Budget routes
         this.router.post(
-            "/budgets",
+            "/create-budget",
             createExpenseTrackerLimiter,
             sanitizeRequestBody,
             validateBudget,
@@ -101,19 +101,19 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.get(
-            "/budgets",
+            "/get-budgets",
             standardExpenseTrackerLimiter,
             this.expenseTrackerController.getBudgets
         );
 
         this.router.get(
-            "/budgets/:id",
+            "/get-budget/:id",
             standardExpenseTrackerLimiter,
             this.expenseTrackerController.getBudgetById
         );
 
         this.router.put(
-            "/budgets/:id",
+            "/update-budget/:id",
             modifyExpenseTrackerLimiter,
             sanitizeRequestBody,
             validateBudget,
@@ -121,14 +121,14 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.delete(
-            "/budgets/:id",
+            "/delete-budget/:id",
             modifyExpenseTrackerLimiter,
             this.expenseTrackerController.deleteBudget
         );
 
         // Semester routes
         this.router.post(
-            "/semesters",
+            "/create-semester",
             createExpenseTrackerLimiter,
             sanitizeRequestBody,
             validateSemester,
@@ -136,7 +136,7 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.get(
-            "/semesters",
+            "/get-semesters",
             standardExpenseTrackerLimiter,
             this.expenseTrackerController.getSemesters
         );
@@ -148,13 +148,13 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.get(
-            "/semesters/:id",
+            "/get-semester/:id",
             standardExpenseTrackerLimiter,
             this.expenseTrackerController.getSemesterById
         );
 
         this.router.put(
-            "/semesters/:id",
+            "/update-semester/:id",
             modifyExpenseTrackerLimiter,
             sanitizeRequestBody,
             validateSemester,
@@ -162,14 +162,14 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.delete(
-            "/semesters/:id",
+            "/delete-semester/:id",
             modifyExpenseTrackerLimiter,
             this.expenseTrackerController.deleteSemester
         );
 
         // Payment Schedule routes
         this.router.post(
-            "/payment-schedules",
+            "/create-payment-schedule",
             createExpenseTrackerLimiter,
             sanitizeRequestBody,
             validatePaymentSchedule,
@@ -177,19 +177,19 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.get(
-            "/payment-schedules",
+            "/get-payment-schedules",
             standardExpenseTrackerLimiter,
             this.expenseTrackerController.getPaymentSchedules
         );
 
         this.router.get(
-            "/payment-schedules/:id",
+            "/get-payment-schedule/:id",
             standardExpenseTrackerLimiter,
             this.expenseTrackerController.getPaymentScheduleById
         );
 
         this.router.put(
-            "/payment-schedules/:id",
+            "/update-payment-schedule/:id",
             modifyExpenseTrackerLimiter,
             sanitizeRequestBody,
             validatePaymentSchedule,
@@ -197,14 +197,14 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.delete(
-            "/payment-schedules/:id",
+            "/delete-payment-schedule/:id",
             modifyExpenseTrackerLimiter,
             this.expenseTrackerController.deletePaymentSchedule
         );
 
         // Savings Goal routes
         this.router.post(
-            "/savings-goals",
+            "/create-savings-goals",
             createExpenseTrackerLimiter,
             sanitizeRequestBody,
             validateSavingsGoal,
@@ -212,19 +212,19 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.get(
-            "/savings-goals",
+            "/get-savings-goals",
             standardExpenseTrackerLimiter,
             this.expenseTrackerController.getSavingsGoals
         );
 
         this.router.get(
-            "/savings-goals/:id",
+            "/get-savings-goal/:id",
             standardExpenseTrackerLimiter,
             this.expenseTrackerController.getSavingsGoalById
         );
 
         this.router.put(
-            "/savings-goals/:id",
+            "/update-savings-goal/:id",
             modifyExpenseTrackerLimiter,
             sanitizeRequestBody,
             validateSavingsGoal,
@@ -232,7 +232,7 @@ export default class ExpenseTrackerRouter {
         );
 
         this.router.delete(
-            "/savings-goals/:id",
+            "/delete-savings-goal/:id",
             modifyExpenseTrackerLimiter,
             this.expenseTrackerController.deleteSavingsGoal
         );
