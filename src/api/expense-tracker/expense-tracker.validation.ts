@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Request, Response, NextFunction } from 'express';
 import { errorHandler } from '../../utils/errorHandler';
-import { BudgetPeriod, PaymentMethod, Term, UniversityPaymentType } from '@prisma/client';
+import { PaymentMethod, Term, UniversityPaymentType } from '@prisma/client';
 
 // Import the ExpenseCategoryType enum
 import { ExpenseCategoryType } from '@prisma/client';
@@ -28,18 +28,6 @@ const incomeSchema = z.object({
     description: z.string().trim().nullable().optional(),
     date: z.coerce.date(),
     recurring: z.boolean().optional(),
-});
-
-// Budget validation schema
-const budgetSchema = z.object({
-    amount: z.number()
-        .positive("Amount must be positive")
-        .finite("Amount must be a valid number"),
-    period: z.nativeEnum(BudgetPeriod),
-    startDate: z.coerce.date(),
-    endDate: z.coerce.date().nullable().optional(),
-    category: z.nativeEnum(ExpenseCategoryType),
-    semesterId: z.string().trim().nullable().optional(),
 });
 
 // Semester validation schema
@@ -106,12 +94,6 @@ const incomeFilterSchema = dateFilterSchema.extend({
     minAmount: z.number().optional(),
     maxAmount: z.number().optional(),
 }).merge(paginationSchema);
-
-// Budget comparison filter schema
-const budgetComparisonSchema = dateFilterSchema.extend({
-    categories: z.array(z.nativeEnum(ExpenseCategoryType)).optional(),
-    semesterId: z.string().optional(),
-});
 
 // Expense-Income comparison schema
 const expenseIncomeComparisonSchema = dateFilterSchema.extend({
@@ -203,13 +185,11 @@ const validateQuery = (schema: z.ZodSchema) => (req: Request, res: Response, nex
 // Export validation middlewares
 export const validateExpense = validate(expenseSchema);
 export const validateIncome = validate(incomeSchema);
-export const validateBudget = validate(budgetSchema);
 export const validateSemester = validate(semesterSchema);
 export const validatePaymentSchedule = validate(paymentScheduleSchema);
 export const validateSavingsGoal = validate(savingsGoalSchema);
 
 export const validateExpenseFilters = validateQuery(expenseFilterSchema);
 export const validateIncomeFilters = validateQuery(incomeFilterSchema);
-export const validateBudgetComparison = validateQuery(budgetComparisonSchema);
 export const validateExpenseIncomeComparison = validateQuery(expenseIncomeComparisonSchema);
 export const validateDashboardStats = validateQuery(dashboardStatsSchema);

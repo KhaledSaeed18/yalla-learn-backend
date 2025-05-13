@@ -2,7 +2,34 @@
 import { Request, Response, NextFunction } from "express";
 import { ExpenseTrackerService } from "./expense-tracker.service";
 import { errorHandler } from "../../utils/errorHandler";
-import { ExpenseCategoryType } from "@prisma/client";
+import { ExpenseCategoryType, PaymentMethod, Term } from "@prisma/client";
+
+// Filter option interfaces
+interface ExpenseFilterOptions {
+    startDate?: Date;
+    endDate?: Date;
+    categories?: ExpenseCategoryType[];
+    semesterId?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    paymentMethods?: PaymentMethod[];
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}
+
+interface IncomeFilterOptions {
+    startDate?: Date;
+    endDate?: Date;
+    recurring?: boolean;
+    minAmount?: number;
+    maxAmount?: number;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}
 
 export default class ExpenseTrackerController {
     private expenseTrackerService: ExpenseTrackerService;
@@ -27,13 +54,6 @@ export default class ExpenseTrackerController {
         this.getIncomeById = this.getIncomeById.bind(this);
         this.updateIncome = this.updateIncome.bind(this);
         this.deleteIncome = this.deleteIncome.bind(this);
-
-        // Budget methods
-        this.createBudget = this.createBudget.bind(this);
-        this.getBudgets = this.getBudgets.bind(this);
-        this.getBudgetById = this.getBudgetById.bind(this);
-        this.updateBudget = this.updateBudget.bind(this);
-        this.deleteBudget = this.deleteBudget.bind(this);
 
         // Semester methods
         this.createSemester = this.createSemester.bind(this);
@@ -60,7 +80,6 @@ export default class ExpenseTrackerController {
         // Reports & Statistics methods
         this.getExpenseSummaryByCategory = this.getExpenseSummaryByCategory.bind(this);
         this.getExpenseIncomeComparison = this.getExpenseIncomeComparison.bind(this);
-        this.getBudgetVsActual = this.getBudgetVsActual.bind(this);
         this.getDashboardStats = this.getDashboardStats.bind(this);
     }
 
@@ -104,7 +123,60 @@ export default class ExpenseTrackerController {
     async getExpenses(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const userId = this.getUserId(req);
-            const result = await this.expenseTrackerService.getExpenses(userId, req.query as any);
+
+            // Create empty options object with the right type
+            const options: ExpenseFilterOptions = {};
+
+            // Convert and copy query parameters
+            if (req.query.startDate) {
+                options.startDate = new Date(req.query.startDate as string);
+            }
+
+            if (req.query.endDate) {
+                options.endDate = new Date(req.query.endDate as string);
+            }
+
+            if (req.query.categories) {
+                options.categories = typeof req.query.categories === 'string'
+                    ? req.query.categories.split(',') as ExpenseCategoryType[]
+                    : req.query.categories as ExpenseCategoryType[];
+            }
+
+            if (req.query.semesterId) {
+                options.semesterId = req.query.semesterId as string;
+            }
+
+            if (req.query.minAmount) {
+                options.minAmount = Number(req.query.minAmount);
+            }
+
+            if (req.query.maxAmount) {
+                options.maxAmount = Number(req.query.maxAmount);
+            }
+
+            if (req.query.paymentMethods) {
+                options.paymentMethods = typeof req.query.paymentMethods === 'string'
+                    ? req.query.paymentMethods.split(',') as PaymentMethod[]
+                    : req.query.paymentMethods as PaymentMethod[];
+            }
+
+            if (req.query.page) {
+                options.page = Number(req.query.page);
+            }
+
+            if (req.query.limit) {
+                options.limit = Number(req.query.limit);
+            }
+
+            if (req.query.sortBy) {
+                options.sortBy = req.query.sortBy as string;
+            }
+
+            if (req.query.sortOrder) {
+                options.sortOrder = req.query.sortOrder as 'asc' | 'desc';
+            }
+
+            const result = await this.expenseTrackerService.getExpenses(userId, options);
 
             res.status(200).json(this.formatResponse(
                 200,
@@ -205,7 +277,48 @@ export default class ExpenseTrackerController {
     async getIncomes(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const userId = this.getUserId(req);
-            const result = await this.expenseTrackerService.getIncomes(userId, req.query as any);
+
+            // Create empty options object with the right type
+            const options: IncomeFilterOptions = {};
+
+            // Convert and copy query parameters
+            if (req.query.startDate) {
+                options.startDate = new Date(req.query.startDate as string);
+            }
+
+            if (req.query.endDate) {
+                options.endDate = new Date(req.query.endDate as string);
+            }
+
+            if (req.query.recurring !== undefined) {
+                options.recurring = req.query.recurring === 'true';
+            }
+
+            if (req.query.minAmount) {
+                options.minAmount = Number(req.query.minAmount);
+            }
+
+            if (req.query.maxAmount) {
+                options.maxAmount = Number(req.query.maxAmount);
+            }
+
+            if (req.query.page) {
+                options.page = Number(req.query.page);
+            }
+
+            if (req.query.limit) {
+                options.limit = Number(req.query.limit);
+            }
+
+            if (req.query.sortBy) {
+                options.sortBy = req.query.sortBy as string;
+            }
+
+            if (req.query.sortOrder) {
+                options.sortOrder = req.query.sortOrder as 'asc' | 'desc';
+            }
+
+            const result = await this.expenseTrackerService.getIncomes(userId, options);
 
             res.status(200).json(this.formatResponse(
                 200,
@@ -281,112 +394,6 @@ export default class ExpenseTrackerController {
         }
     }
 
-    // ************************ BUDGET CONTROLLERS ************************ //
-
-    async createBudget(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const budget = await this.expenseTrackerService.createBudget(userId, req.body);
-
-            res.status(201).json(this.formatResponse(
-                201,
-                "Budget created successfully",
-                { budget }
-            ));
-        } catch (err) {
-            const message = (err as Error).message;
-            if (message.includes("Invalid")) {
-                next(errorHandler(400, message));
-                return;
-            }
-            next(errorHandler(500, message || "Failed to create budget"));
-        }
-    }
-
-    async getBudgets(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const budgets = await this.expenseTrackerService.getBudgets(userId, req.query as any);
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Budgets retrieved successfully",
-                { budgets }
-            ));
-        } catch (err) {
-            next(errorHandler(500, (err as Error).message || "Failed to retrieve budgets"));
-        }
-    }
-
-    async getBudgetById(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const budgetId = req.params.id;
-            const budget = await this.expenseTrackerService.getBudgetById(budgetId, userId);
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Budget retrieved successfully",
-                { budget }
-            ));
-        } catch (err) {
-            if ((err as Error).message === "Budget not found") {
-                next(errorHandler(404, "Budget not found"));
-                return;
-            }
-            next(errorHandler(500, (err as Error).message || "Failed to retrieve budget"));
-        }
-    }
-
-    async updateBudget(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const budgetId = req.params.id;
-            const updatedBudget = await this.expenseTrackerService.updateBudget(
-                budgetId,
-                userId,
-                req.body
-            );
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Budget updated successfully",
-                { budget: updatedBudget }
-            ));
-        } catch (err) {
-            const message = (err as Error).message;
-            if (message === "Budget not found") {
-                next(errorHandler(404, "Budget not found"));
-                return;
-            }
-            if (message.includes("Invalid")) {
-                next(errorHandler(400, message));
-                return;
-            }
-            next(errorHandler(500, message || "Failed to update budget"));
-        }
-    }
-
-    async deleteBudget(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const budgetId = req.params.id;
-            await this.expenseTrackerService.deleteBudget(budgetId, userId);
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Budget deleted successfully",
-                null
-            ));
-        } catch (err) {
-            if ((err as Error).message === "Budget not found") {
-                next(errorHandler(404, "Budget not found"));
-                return;
-            }
-            next(errorHandler(500, (err as Error).message || "Failed to delete budget"));
-        }
-    }
-
     // ************************ SEMESTER CONTROLLERS ************************ //
 
     async createSemester(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -407,7 +414,28 @@ export default class ExpenseTrackerController {
     async getSemesters(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const userId = this.getUserId(req);
-            const semesters = await this.expenseTrackerService.getSemesters(userId, req.query as any);
+
+            // Convert query parameters to appropriate types
+            const options: {
+                includeCompleted?: boolean;
+                term?: Term;
+                year?: number;
+            } = {};
+
+            // Copy and convert query parameters
+            if (req.query.includeCompleted !== undefined) {
+                options.includeCompleted = req.query.includeCompleted === 'true';
+            }
+
+            if (req.query.term) {
+                options.term = req.query.term as Term;
+            }
+
+            if (req.query.year) {
+                options.year = Number(req.query.year);
+            }
+
+            const semesters = await this.expenseTrackerService.getSemesters(userId, options);
 
             res.status(200).json(this.formatResponse(
                 200,
@@ -758,42 +786,6 @@ export default class ExpenseTrackerController {
             ));
         } catch (err) {
             next(errorHandler(500, (err as Error).message || "Failed to generate expense-income comparison"));
-        }
-    }
-
-    async getBudgetVsActual(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-
-            // Parse query parameters
-            const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
-            const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
-            let categories: ExpenseCategoryType[] | undefined = undefined;
-
-            if (req.query.categories) {
-                if (typeof req.query.categories === 'string') {
-                    categories = req.query.categories.split(',') as ExpenseCategoryType[];
-                } else if (Array.isArray(req.query.categories)) {
-                    categories = req.query.categories as ExpenseCategoryType[];
-                }
-            }
-
-            const semesterId = req.query.semesterId as string | undefined;
-
-            const comparison = await this.expenseTrackerService.getBudgetVsActual(userId, {
-                startDate,
-                endDate,
-                categories,
-                semesterId
-            });
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Budget vs. actual comparison retrieved successfully",
-                comparison
-            ));
-        } catch (err) {
-            next(errorHandler(500, (err as Error).message || "Failed to generate budget vs. actual comparison"));
         }
     }
 

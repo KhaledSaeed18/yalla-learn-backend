@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BudgetPeriod, ExpenseCategoryType, PaymentMethod, PrismaClient, Term, UniversityPaymentType } from '@prisma/client';
+import { ExpenseCategoryType, PaymentMethod, PrismaClient, Term, UniversityPaymentType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // DTOs for data transfer
@@ -19,15 +19,6 @@ interface CreateIncomeDTO {
     description?: string | null;
     date: Date;
     recurring?: boolean;
-}
-
-interface CreateBudgetDTO {
-    amount: number;
-    period: BudgetPeriod;
-    startDate: Date;
-    endDate?: Date | null;
-    category: ExpenseCategoryType;
-    semesterId?: string | null;
 }
 
 interface CreateSemesterDTO {
@@ -486,199 +477,6 @@ export class ExpenseTrackerService {
         }
     }
 
-    // ************************ BUDGET METHODS ************************ //
-
-    /**
-     * Create a new budget for a user
-     */
-    async createBudget(userId: string, data: CreateBudgetDTO) {
-        try {
-            // Verify semester if provided
-            if (data.semesterId) {
-                const semester = await this.prisma.semester.findFirst({
-                    where: {
-                        id: data.semesterId,
-                        userId,
-                    },
-                });
-
-                if (!semester) {
-                    throw new Error('Invalid semester');
-                }
-            }
-
-            return this.prisma.budget.create({
-                data: {
-                    ...data,
-                    userId,
-                },
-                include: {
-                    semester: true,
-                },
-            });
-        } catch (error) {
-            console.error('Error creating budget:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get budgets for a user with filtering
-     */
-    async getBudgets(userId: string, options: {
-        category?: ExpenseCategoryType;
-        semesterId?: string;
-        period?: BudgetPeriod;
-        includeExpired?: boolean;
-    } = {}) {
-        try {
-            const {
-                category,
-                semesterId,
-                period,
-                includeExpired = false,
-            } = options;
-
-            // Build filter conditions
-            const where: any = {
-                userId,
-            };
-
-            // Filter by category
-            if (category) {
-                where.category = category;
-            }
-
-            // Filter by semester
-            if (semesterId) {
-                where.semesterId = semesterId;
-            }
-
-            // Filter by period
-            if (period) {
-                where.period = period;
-            }
-
-            // Filter out expired budgets if requested
-            if (!includeExpired) {
-                where.OR = [
-                    { endDate: { gte: new Date() } },
-                    { endDate: null },
-                ];
-            }
-
-            return this.prisma.budget.findMany({
-                where,
-                orderBy: [
-                    { startDate: 'asc' },
-                    { period: 'asc' },
-                ],
-                include: {
-                    semester: true,
-                },
-            });
-        } catch (error) {
-            console.error('Error getting budgets:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get budget by ID
-     */
-    async getBudgetById(id: string, userId: string) {
-        try {
-            const budget = await this.prisma.budget.findFirst({
-                where: {
-                    id,
-                    userId,
-                },
-                include: {
-                    semester: true,
-                },
-            });
-
-            if (!budget) {
-                throw new Error('Budget not found');
-            }
-
-            return budget;
-        } catch (error) {
-            console.error('Error getting budget by ID:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Update a budget
-     */
-    async updateBudget(id: string, userId: string, data: Partial<CreateBudgetDTO>) {
-        try {
-            // Check if budget exists and belongs to user
-            const budget = await this.prisma.budget.findFirst({
-                where: {
-                    id,
-                    userId,
-                },
-            });
-
-            if (!budget) {
-                throw new Error('Budget not found');
-            }
-
-            // Verify semester if changing
-            if (data.semesterId && data.semesterId !== budget.semesterId) {
-                const semester = await this.prisma.semester.findFirst({
-                    where: {
-                        id: data.semesterId,
-                        userId,
-                    },
-                });
-
-                if (!semester) {
-                    throw new Error('Invalid semester');
-                }
-            }
-
-            return this.prisma.budget.update({
-                where: { id },
-                data,
-                include: {
-                    semester: true,
-                },
-            });
-        } catch (error) {
-            console.error('Error updating budget:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Delete a budget
-     */
-    async deleteBudget(id: string, userId: string) {
-        try {
-            // Check if budget exists and belongs to user
-            const budget = await this.prisma.budget.findFirst({
-                where: {
-                    id,
-                    userId,
-                },
-            });
-
-            if (!budget) {
-                throw new Error('Budget not found');
-            }
-
-            return this.prisma.budget.delete({
-                where: { id },
-            });
-        } catch (error) {
-            console.error('Error deleting budget:', error);
-            throw error;
-        }
-    }
-
     // ************************ SEMESTER METHODS ************************ //
 
     /**
@@ -756,7 +554,6 @@ export class ExpenseTrackerService {
                     _count: {
                         select: {
                             expenses: true,
-                            budgets: true,
                             paymentSchedules: true,
                         }
                     }
@@ -782,7 +579,6 @@ export class ExpenseTrackerService {
                     _count: {
                         select: {
                             expenses: true,
-                            budgets: true,
                             paymentSchedules: true,
                         }
                     }
@@ -814,7 +610,6 @@ export class ExpenseTrackerService {
                     _count: {
                         select: {
                             expenses: true,
-                            budgets: true,
                             paymentSchedules: true,
                         }
                     }
@@ -884,7 +679,6 @@ export class ExpenseTrackerService {
                     _count: {
                         select: {
                             expenses: true,
-                            budgets: true,
                             paymentSchedules: true,
                         }
                     }
@@ -897,7 +691,6 @@ export class ExpenseTrackerService {
 
             // Check if semester has related records
             if (semester._count.expenses > 0 ||
-                semester._count.budgets > 0 ||
                 semester._count.paymentSchedules > 0) {
                 throw new Error('Cannot delete semester with associated records');
             }
@@ -1546,246 +1339,6 @@ export class ExpenseTrackerService {
     }
 
     /**
-     * Get budget vs. actual spending for a specific time period
-     */
-    async getBudgetVsActual(userId: string, options: {
-        startDate?: Date;
-        endDate?: Date;
-        categories?: ExpenseCategoryType[];
-        semesterId?: string;
-    } = {}) {
-        try {
-            const {
-                startDate,
-                endDate,
-                categories,
-                semesterId,
-            } = options;
-
-            // Set default date range if not provided
-            const now = new Date();
-            const defaultStartDate = new Date();
-            defaultStartDate.setMonth(now.getMonth() - 1);
-
-            const effectiveStartDate = startDate || defaultStartDate;
-            const effectiveEndDate = endDate || now;
-
-            // Build budget filter
-            const budgetWhere: any = {
-                userId,
-                OR: [
-                    {
-                        AND: [
-                            { startDate: { lte: effectiveEndDate } },
-                            { endDate: { gte: effectiveStartDate } },
-                        ]
-                    },
-                    {
-                        AND: [
-                            { startDate: { lte: effectiveEndDate } },
-                            { endDate: null },
-                        ]
-                    }
-                ]
-            };
-
-            // Add category filter if provided
-            if (categories && categories.length > 0) {
-                budgetWhere.category = {
-                    in: categories,
-                };
-            }
-
-            // Add semester filter if provided
-            if (semesterId) {
-                budgetWhere.semesterId = semesterId;
-            }
-
-            // Get budgets
-            const budgets = await this.prisma.budget.findMany({
-                where: budgetWhere,
-            });
-
-            // Build expense filter
-            const expenseWhere: any = {
-                userId,
-                date: {
-                    gte: effectiveStartDate,
-                    lte: effectiveEndDate,
-                },
-            };
-
-            // Add category filter if provided
-            if (categories && categories.length > 0) {
-                expenseWhere.category = {
-                    in: categories,
-                };
-            }
-
-            // Add semester filter if provided
-            if (semesterId) {
-                expenseWhere.semesterId = semesterId;
-            }
-
-            // Get expenses
-            const expenses = await this.prisma.expense.findMany({
-                where: expenseWhere,
-            });
-
-            // Helper function to calculate budget amount for the period
-            const calculateProRatedBudget = (budget: any): number => {
-                // Convert Decimal to number for calculations
-                const amount = budget.amount instanceof Decimal
-                    ? budget.amount.toNumber()
-                    : Number(budget.amount);
-
-                // For budgets entirely within the period, return the full amount
-                if (
-                    budget.startDate >= effectiveStartDate &&
-                    (budget.endDate === null || budget.endDate <= effectiveEndDate)
-                ) {
-                    return amount;
-                }
-
-                // For budgets that span beyond the period, pro-rate the amount
-                const budgetStartDate = budget.startDate < effectiveStartDate
-                    ? effectiveStartDate
-                    : budget.startDate;
-
-                const budgetEndDate = budget.endDate === null || budget.endDate > effectiveEndDate
-                    ? effectiveEndDate
-                    : budget.endDate;
-
-                const totalDays = (budget.endDate === null)
-                    ? daysInPeriod(budget.period, budget.startDate)
-                    : Math.max(1, Math.ceil((budget.endDate.getTime() - budget.startDate.getTime()) / (1000 * 60 * 60 * 24)));
-
-                const daysInRange = Math.max(1, Math.ceil((budgetEndDate.getTime() - budgetStartDate.getTime()) / (1000 * 60 * 60 * 24)));
-
-                return (amount * daysInRange) / totalDays;
-            };
-
-            // Helper function to determine the number of days in a budget period
-            const daysInPeriod = (period: BudgetPeriod, startDate: Date): number => {
-                switch (period) {
-                    case 'DAILY':
-                        return 1;
-                    case 'WEEKLY':
-                        return 7;
-                    case 'MONTHLY': {
-                        const d = new Date(startDate);
-                        const month = d.getMonth();
-                        const year = d.getFullYear();
-                        const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-                        return lastDayOfMonth;
-                    }
-                    case 'SEMESTER':
-                        return 120; // ~4 months
-                    case 'YEARLY':
-                        return 365;
-                    default:
-                        return 30; // Default to month
-                }
-            };
-
-            // Group budgets by category
-            const budgetsByCategory: Record<string, {
-                category: ExpenseCategoryType;
-                budgetAmount: number;
-            }> = {};
-
-            budgets.forEach(budget => {
-                const category = budget.category;
-
-                if (!budgetsByCategory[category]) {
-                    budgetsByCategory[category] = {
-                        category,
-                        budgetAmount: 0,
-                    };
-                }
-
-                budgetsByCategory[category].budgetAmount += calculateProRatedBudget(budget);
-            });
-
-            // Group expenses by category
-            const expensesByCategory: Record<string, number> = {};
-
-            expenses.forEach(expense => {
-                const category = expense.category;
-                const amount = expense.amount instanceof Decimal
-                    ? expense.amount.toNumber()
-                    : Number(expense.amount);
-
-                expensesByCategory[category] = (expensesByCategory[category] || 0) + amount;
-            });
-
-            // Combine budget and actual for each category
-            const categoryAnalysis = Object.values(budgetsByCategory).map(budget => {
-                const actual = expensesByCategory[budget.category] || 0;
-                const remaining = budget.budgetAmount - actual;
-                const percentage = budget.budgetAmount > 0 ? (actual / budget.budgetAmount) * 100 : 0;
-
-                return {
-                    ...budget,
-                    actualAmount: actual,
-                    remainingAmount: remaining,
-                    percentage,
-                    status: percentage <= 85
-                        ? 'UNDER_BUDGET'
-                        : percentage <= 100
-                            ? 'NEAR_LIMIT'
-                            : 'OVER_BUDGET'
-                };
-            });
-
-            // Add categories with expenses but no budget
-            Object.keys(expensesByCategory).forEach(category => {
-                if (!budgetsByCategory[category]) {
-                    categoryAnalysis.push({
-                        category: category as ExpenseCategoryType,
-                        budgetAmount: 0,
-                        actualAmount: expensesByCategory[category],
-                        remainingAmount: -expensesByCategory[category],
-                        percentage: 100,
-                        status: 'NO_BUDGET'
-                    });
-                }
-            });
-
-            // Sort analysis by percentage (highest first)
-            categoryAnalysis.sort((a, b) => b.percentage - a.percentage);
-
-            // Calculate totals
-            const totalBudget = categoryAnalysis.reduce((sum, c) => sum + c.budgetAmount, 0);
-            const totalActual = categoryAnalysis.reduce((sum, c) => sum + c.actualAmount, 0);
-            const totalRemaining = totalBudget - totalActual;
-            const overallPercentage = totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0;
-
-            return {
-                categories: categoryAnalysis,
-                summary: {
-                    totalBudget,
-                    totalSpent: totalActual,
-                    totalRemaining,
-                    overallPercentage,
-                    overallStatus: overallPercentage <= 85
-                        ? 'UNDER_BUDGET'
-                        : overallPercentage <= 100
-                            ? 'NEAR_LIMIT'
-                            : 'OVER_BUDGET'
-                },
-                timeframe: {
-                    startDate: effectiveStartDate,
-                    endDate: effectiveEndDate,
-                },
-            };
-        } catch (error) {
-            console.error('Error getting budget vs. actual analysis:', error);
-            throw error;
-        }
-    }
-
-    /**
      * Get key financial stats for dashboard
      */
     async getDashboardStats(userId: string, options: {
@@ -1879,19 +1432,6 @@ export class ExpenseTrackerService {
                 return sum + amount;
             }, 0);
 
-            // Get budget vs actual
-            let budgetVsActualData = null;
-
-            try {
-                budgetVsActualData = await this.getBudgetVsActual(userId, {
-                    startDate,
-                    endDate,
-                    semesterId,
-                });
-            } catch (error) {
-                console.warn('Error getting budget vs actual data for dashboard:', error);
-            }
-
             // Get top expense categories
             const categoryExpenses = await this.getExpenseSummaryByCategory(userId, {
                 startDate,
@@ -1932,9 +1472,6 @@ export class ExpenseTrackerService {
                 },
                 insights: {
                     avgDailyExpense,
-                    haveBudget: budgetVsActualData ? budgetVsActualData.summary.totalBudget > 0 : false,
-                    budgetStatus: budgetVsActualData ? budgetVsActualData.summary.overallStatus : null,
-                    budgetPercentage: budgetVsActualData ? budgetVsActualData.summary.overallPercentage : null,
                     topCategory: categoryExpenses.categories.length > 0 ? categoryExpenses.categories[0] : null,
                     upcomingPaymentsCount: upcomingPayments.length,
                     upcomingPaymentsTotal: upcomingPayments.reduce((sum, p) => {

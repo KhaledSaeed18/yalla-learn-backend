@@ -46,7 +46,6 @@ model User {
   // Expense tracker relations
   Expense         Expense[]
   Income          Income[]
-  Budget          Budget[]
   SavingsGoal     SavingsGoal[]
   PaymentSchedule PaymentSchedule[]
   Semester        Semester[]
@@ -456,6 +455,16 @@ model Expense {
   @@index([semesterId])
 }
 
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+  MOBILE_PAYMENT
+  SCHOLARSHIP
+  OTHER
+}
+
 model Income {
   id          String   @id @default(cuid())
   amount      Decimal  @db.Decimal(10, 2)
@@ -474,44 +483,6 @@ model Income {
   @@index([date])
 }
 
-model Budget {
-  id         String              @id @default(cuid())
-  amount     Decimal             @db.Decimal(10, 2)
-  period     BudgetPeriod
-  startDate  DateTime
-  endDate    DateTime?
-  category   ExpenseCategoryType
-  userId     String
-  semesterId String?
-
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  semester Semester? @relation(fields: [semesterId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([semesterId])
-}
-
-enum BudgetPeriod {
-  DAILY
-  WEEKLY
-  MONTHLY
-  SEMESTER
-  YEARLY
-}
-
-enum PaymentMethod {
-  CASH
-  CREDIT_CARD
-  DEBIT_CARD
-  BANK_TRANSFER
-  MOBILE_PAYMENT
-  SCHOLARSHIP
-  OTHER
-}
-
 model Semester {
   id        String   @id @default(cuid())
   name      String
@@ -524,7 +495,6 @@ model Semester {
 
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   expenses         Expense[]
-  budgets          Budget[]
   paymentSchedules PaymentSchedule[]
 
   createdAt DateTime @default(now())

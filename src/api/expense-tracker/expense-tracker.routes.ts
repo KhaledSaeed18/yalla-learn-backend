@@ -3,7 +3,7 @@ import ExpenseTrackerController from "./expense-tracker.controller";
 import { authorize } from "../../middlewares/authorization.middleware";
 import { sanitizeRequestBody } from "../../middlewares/sanitizeBody.middleware";
 import { createExpenseTrackerLimiter, modifyExpenseTrackerLimiter, reportExpenseTrackerLimiter, standardExpenseTrackerLimiter } from "./expense-tracker.rateLimiting";
-import { validateBudget, validateExpense, validateIncome, validatePaymentSchedule, validateSavingsGoal, validateSemester, validateExpenseFilters, validateIncomeFilters, validateBudgetComparison, validateExpenseIncomeComparison, validateDashboardStats } from "./expense-tracker.validation";
+import { validateExpense, validateIncome, validatePaymentSchedule, validateSavingsGoal, validateSemester, validateExpenseFilters, validateIncomeFilters, validateExpenseIncomeComparison, validateDashboardStats } from "./expense-tracker.validation";
 
 export default class ExpenseTrackerRouter {
     private router: Router;
@@ -89,41 +89,6 @@ export default class ExpenseTrackerRouter {
             "/delete-income/:id",
             modifyExpenseTrackerLimiter,
             this.expenseTrackerController.deleteIncome
-        );
-
-        // Budget routes
-        this.router.post(
-            "/create-budget",
-            createExpenseTrackerLimiter,
-            sanitizeRequestBody,
-            validateBudget,
-            this.expenseTrackerController.createBudget
-        );
-
-        this.router.get(
-            "/get-budgets",
-            standardExpenseTrackerLimiter,
-            this.expenseTrackerController.getBudgets
-        );
-
-        this.router.get(
-            "/get-budget/:id",
-            standardExpenseTrackerLimiter,
-            this.expenseTrackerController.getBudgetById
-        );
-
-        this.router.put(
-            "/update-budget/:id",
-            modifyExpenseTrackerLimiter,
-            sanitizeRequestBody,
-            validateBudget,
-            this.expenseTrackerController.updateBudget
-        );
-
-        this.router.delete(
-            "/delete-budget/:id",
-            modifyExpenseTrackerLimiter,
-            this.expenseTrackerController.deleteBudget
         );
 
         // Semester routes
@@ -249,13 +214,6 @@ export default class ExpenseTrackerRouter {
             reportExpenseTrackerLimiter,
             validateExpenseIncomeComparison,
             this.expenseTrackerController.getExpenseIncomeComparison
-        );
-
-        this.router.get(
-            "/reports/budget-vs-actual",
-            reportExpenseTrackerLimiter,
-            validateBudgetComparison,
-            this.expenseTrackerController.getBudgetVsActual
         );
 
         this.router.get(
