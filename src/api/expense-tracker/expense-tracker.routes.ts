@@ -3,7 +3,7 @@ import ExpenseTrackerController from "./expense-tracker.controller";
 import { authorize } from "../../middlewares/authorization.middleware";
 import { sanitizeRequestBody } from "../../middlewares/sanitizeBody.middleware";
 import { createExpenseTrackerLimiter, modifyExpenseTrackerLimiter, reportExpenseTrackerLimiter, standardExpenseTrackerLimiter } from "./expense-tracker.rateLimiting";
-import { validateExpense, validateIncome, validatePaymentSchedule, validateSavingsGoal, validateSemester, validateExpenseFilters, validateIncomeFilters, validateExpenseIncomeComparison, validateDashboardStats } from "./expense-tracker.validation";
+import { validateExpense, validateIncome, validatePaymentSchedule, validateSemester, validateExpenseFilters, validateIncomeFilters, validateExpenseIncomeComparison, validateDashboardStats } from "./expense-tracker.validation";
 
 export default class ExpenseTrackerRouter {
     private router: Router;
@@ -165,41 +165,6 @@ export default class ExpenseTrackerRouter {
             "/delete-payment-schedule/:id",
             modifyExpenseTrackerLimiter,
             this.expenseTrackerController.deletePaymentSchedule
-        );
-
-        // Savings Goal routes
-        this.router.post(
-            "/create-savings-goals",
-            createExpenseTrackerLimiter,
-            sanitizeRequestBody,
-            validateSavingsGoal,
-            this.expenseTrackerController.createSavingsGoal
-        );
-
-        this.router.get(
-            "/get-savings-goals",
-            standardExpenseTrackerLimiter,
-            this.expenseTrackerController.getSavingsGoals
-        );
-
-        this.router.get(
-            "/get-savings-goal/:id",
-            standardExpenseTrackerLimiter,
-            this.expenseTrackerController.getSavingsGoalById
-        );
-
-        this.router.put(
-            "/update-savings-goal/:id",
-            modifyExpenseTrackerLimiter,
-            sanitizeRequestBody,
-            validateSavingsGoal,
-            this.expenseTrackerController.updateSavingsGoal
-        );
-
-        this.router.delete(
-            "/delete-savings-goal/:id",
-            modifyExpenseTrackerLimiter,
-            this.expenseTrackerController.deleteSavingsGoal
         );
 
         // Reports & Statistics routes

@@ -46,7 +46,6 @@ model User {
   // Expense tracker relations
   Expense         Expense[]
   Income          Income[]
-  SavingsGoal     SavingsGoal[]
   PaymentSchedule PaymentSchedule[]
   Semester        Semester[]
   Report          Report[]
@@ -545,25 +544,6 @@ enum UniversityPaymentType {
   INSURANCE
   PARKING
   OTHER
-}
-
-model SavingsGoal {
-  id            String    @id @default(cuid())
-  name          String
-  targetAmount  Decimal   @db.Decimal(10, 2)
-  currentAmount Decimal   @default(0) @db.Decimal(10, 2)
-  startDate     DateTime  @default(now())
-  targetDate    DateTime?
-  isCompleted   Boolean   @default(false)
-  userId        String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([isCompleted])
 }
 
 model Report {

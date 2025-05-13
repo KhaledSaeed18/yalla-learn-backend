@@ -70,13 +70,6 @@ export default class ExpenseTrackerController {
         this.updatePaymentSchedule = this.updatePaymentSchedule.bind(this);
         this.deletePaymentSchedule = this.deletePaymentSchedule.bind(this);
 
-        // Savings Goal methods
-        this.createSavingsGoal = this.createSavingsGoal.bind(this);
-        this.getSavingsGoals = this.getSavingsGoals.bind(this);
-        this.getSavingsGoalById = this.getSavingsGoalById.bind(this);
-        this.updateSavingsGoal = this.updateSavingsGoal.bind(this);
-        this.deleteSavingsGoal = this.deleteSavingsGoal.bind(this);
-
         // Reports & Statistics methods
         this.getExpenseSummaryByCategory = this.getExpenseSummaryByCategory.bind(this);
         this.getExpenseIncomeComparison = this.getExpenseIncomeComparison.bind(this);
@@ -642,106 +635,6 @@ export default class ExpenseTrackerController {
                 return;
             }
             next(errorHandler(500, (err as Error).message || "Failed to delete payment schedule"));
-        }
-    }
-
-    // ************************ SAVINGS GOAL CONTROLLERS ************************ //
-
-    async createSavingsGoal(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const savingsGoal = await this.expenseTrackerService.createSavingsGoal(userId, req.body);
-
-            res.status(201).json(this.formatResponse(
-                201,
-                "Savings goal created successfully",
-                { savingsGoal }
-            ));
-        } catch (err) {
-            next(errorHandler(500, (err as Error).message || "Failed to create savings goal"));
-        }
-    }
-
-    async getSavingsGoals(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const includeCompleted = req.query.includeCompleted === 'true';
-
-            const savingsGoals = await this.expenseTrackerService.getSavingsGoals(userId, {
-                includeCompleted
-            });
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Savings goals retrieved successfully",
-                { savingsGoals }
-            ));
-        } catch (err) {
-            next(errorHandler(500, (err as Error).message || "Failed to retrieve savings goals"));
-        }
-    }
-
-    async getSavingsGoalById(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const goalId = req.params.id;
-            const savingsGoal = await this.expenseTrackerService.getSavingsGoalById(goalId, userId);
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Savings goal retrieved successfully",
-                { savingsGoal }
-            ));
-        } catch (err) {
-            if ((err as Error).message === "Savings goal not found") {
-                next(errorHandler(404, "Savings goal not found"));
-                return;
-            }
-            next(errorHandler(500, (err as Error).message || "Failed to retrieve savings goal"));
-        }
-    }
-
-    async updateSavingsGoal(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const goalId = req.params.id;
-            const updatedGoal = await this.expenseTrackerService.updateSavingsGoal(
-                goalId,
-                userId,
-                req.body
-            );
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Savings goal updated successfully",
-                { savingsGoal: updatedGoal }
-            ));
-        } catch (err) {
-            if ((err as Error).message === "Savings goal not found") {
-                next(errorHandler(404, "Savings goal not found"));
-                return;
-            }
-            next(errorHandler(500, (err as Error).message || "Failed to update savings goal"));
-        }
-    }
-
-    async deleteSavingsGoal(req: Request, res: Response, next: NextFunction): Promise<void> {
-        try {
-            const userId = this.getUserId(req);
-            const goalId = req.params.id;
-            await this.expenseTrackerService.deleteSavingsGoal(goalId, userId);
-
-            res.status(200).json(this.formatResponse(
-                200,
-                "Savings goal deleted successfully",
-                null
-            ));
-        } catch (err) {
-            if ((err as Error).message === "Savings goal not found") {
-                next(errorHandler(404, "Savings goal not found"));
-                return;
-            }
-            next(errorHandler(500, (err as Error).message || "Failed to delete savings goal"));
         }
     }
 

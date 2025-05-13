@@ -41,15 +41,6 @@ interface CreatePaymentScheduleDTO {
     notes?: string | null;
 }
 
-interface CreateSavingsGoalDTO {
-    name: string;
-    targetAmount: number;
-    currentAmount?: number;
-    startDate?: Date;
-    targetDate?: Date | null;
-    isCompleted?: boolean;
-}
-
 interface ExpenseFilterOptions {
     startDate?: Date;
     endDate?: Date;
@@ -916,152 +907,7 @@ export class ExpenseTrackerService {
             throw error;
         }
     }
-
-    // ************************ SAVINGS GOAL METHODS ************************ //
-
-    /**
-     * Create a new savings goal
-     */
-    async createSavingsGoal(userId: string, data: CreateSavingsGoalDTO) {
-        try {
-            return this.prisma.savingsGoal.create({
-                data: {
-                    ...data,
-                    userId,
-                    startDate: data.startDate || new Date(),
-                    currentAmount: data.currentAmount || 0,
-                },
-            });
-        } catch (error) {
-            console.error('Error creating savings goal:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get savings goals for a user
-     */
-    async getSavingsGoals(userId: string, options: {
-        includeCompleted?: boolean;
-    } = {}) {
-        try {
-            const {
-                includeCompleted = true,
-            } = options;
-
-            // Build filter conditions
-            const where: any = {
-                userId,
-            };
-
-            // Filter by completion status
-            if (!includeCompleted) {
-                where.isCompleted = false;
-            }
-
-            return this.prisma.savingsGoal.findMany({
-                where,
-                orderBy: [
-                    { isCompleted: 'asc' },
-                    { targetDate: 'asc' },
-                ],
-            });
-        } catch (error) {
-            console.error('Error getting savings goals:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get savings goal by ID
-     */
-    async getSavingsGoalById(id: string, userId: string) {
-        try {
-            const savingsGoal = await this.prisma.savingsGoal.findFirst({
-                where: {
-                    id,
-                    userId,
-                },
-            });
-
-            if (!savingsGoal) {
-                throw new Error('Savings goal not found');
-            }
-
-            return savingsGoal;
-        } catch (error) {
-            console.error('Error getting savings goal by ID:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Update a savings goal
-     */
-    async updateSavingsGoal(id: string, userId: string, data: Partial<CreateSavingsGoalDTO>) {
-        try {
-            // Check if savings goal exists and belongs to user
-            const savingsGoal = await this.prisma.savingsGoal.findFirst({
-                where: {
-                    id,
-                    userId,
-                },
-            });
-
-            if (!savingsGoal) {
-                throw new Error('Savings goal not found');
-            }
-
-            // Check if updating currentAmount would complete the goal
-            const updatedData = { ...data };
-            if (data.currentAmount !== undefined) {
-                const targetAmount = data.targetAmount || savingsGoal.targetAmount;
-                const targetAmountNumber = targetAmount instanceof Decimal ? targetAmount.toNumber() : Number(targetAmount);
-
-                // Auto-update isCompleted based on current amount vs target
-                if (data.currentAmount >= targetAmountNumber) {
-                    updatedData.isCompleted = true;
-                } else if (data.isCompleted === undefined) {
-                    updatedData.isCompleted = false;
-                }
-            }
-
-            return this.prisma.savingsGoal.update({
-                where: { id },
-                data: updatedData,
-            });
-        } catch (error) {
-            console.error('Error updating savings goal:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Delete a savings goal
-     */
-    async deleteSavingsGoal(id: string, userId: string) {
-        try {
-            // Check if savings goal exists and belongs to user
-            const savingsGoal = await this.prisma.savingsGoal.findFirst({
-                where: {
-                    id,
-                    userId,
-                },
-            });
-
-            if (!savingsGoal) {
-                throw new Error('Savings goal not found');
-            }
-
-            return this.prisma.savingsGoal.delete({
-                where: { id },
-            });
-        } catch (error) {
-            console.error('Error deleting savings goal:', error);
-            throw error;
-        }
-    }
-
+    
     // ************************ REPORTS & STATISTICS ************************ //
 
     /**
@@ -1454,11 +1300,6 @@ export class ExpenseTrackerService {
             // Get active semester
             const activeSemester = await this.getActiveSemester(userId);
 
-            // Get savings goals progress
-            const savingsGoals = await this.getSavingsGoals(userId, {
-                includeCompleted: false,
-            });
-
             // Calculate average daily expense
             const uniqueDays = new Set(expenses.map(e => e.date.toISOString().split('T')[0])).size;
             const avgDailyExpense = uniqueDays > 0 ? totalExpenses / uniqueDays : totalExpenses;
@@ -1489,7 +1330,6 @@ export class ExpenseTrackerService {
                     startDate,
                     endDate,
                     activeSemester,
-                    savingsGoals: savingsGoals.slice(0, 3), // Top 3 savings goals
                 },
             };
         } catch (error) {

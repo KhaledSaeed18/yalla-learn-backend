@@ -54,18 +54,6 @@ const paymentScheduleSchema = z.object({
     notes: z.string().trim().nullable().optional(),
 });
 
-// Savings Goal validation schema
-const savingsGoalSchema = z.object({
-    name: z.string().trim().min(1, "Goal name is required"),
-    targetAmount: z.number()
-        .positive("Target amount must be positive")
-        .finite("Target amount must be a valid number"),
-    currentAmount: z.number().nonnegative().optional(),
-    startDate: z.coerce.date().optional(),
-    targetDate: z.coerce.date().nullable().optional(),
-    isCompleted: z.boolean().optional(),
-});
-
 // Filter options validation schemas
 const dateFilterSchema = z.object({
     startDate: z.coerce.date().optional(),
@@ -187,7 +175,6 @@ export const validateExpense = validate(expenseSchema);
 export const validateIncome = validate(incomeSchema);
 export const validateSemester = validate(semesterSchema);
 export const validatePaymentSchedule = validate(paymentScheduleSchema);
-export const validateSavingsGoal = validate(savingsGoalSchema);
 
 export const validateExpenseFilters = validateQuery(expenseFilterSchema);
 export const validateIncomeFilters = validateQuery(incomeFilterSchema);
