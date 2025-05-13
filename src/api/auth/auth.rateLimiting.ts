@@ -108,3 +108,12 @@ export const disable2FALimiter = rateLimit({
         next(errorHandler(429, "Too many 2FA disable attempts, please try again later"));
     }
 });
+
+// Rate limiting for 2FA status check, 50 requests per 15 minutes
+export const check2FAStatusLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 50,
+    handler: (_req, _res, next) => {
+        next(errorHandler(429, "Too many status check attempts, please try again later"));
+    }
+});

@@ -19,6 +19,7 @@ export default class AuthController {
     this.verify2FA = this.verify2FA.bind(this);
     this.signin2FA = this.signin2FA.bind(this);
     this.disable2FA = this.disable2FA.bind(this);
+    this.check2FAStatus = this.check2FAStatus.bind(this);
   }
 
   // Signup controller
@@ -362,6 +363,23 @@ export default class AuthController {
         return;
       }
       next(errorHandler(500, "Failed to disable 2FA"));
+    }
+  }
+
+  // Check 2FA status controller
+  async check2FAStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user?.userId as string;
+
+      if (!userId) {
+        return next(errorHandler(400, "User ID is required"));
+      }
+
+      const result = await this.authService.check2FAStatus(userId);
+
+      res.status(200).json(result);
+    } catch (err) {
+      next(errorHandler(500, (err as Error).message || "Failed to check 2FA status"));
     }
   }
 }

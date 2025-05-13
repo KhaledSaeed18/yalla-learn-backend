@@ -71,6 +71,30 @@ export class AuthService {
     });
   }
 
+  // Check 2FA status for authenticated user
+  public async check2FAStatus(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        totpEnabled: true
+      }
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return {
+      status: "success",
+      statusCode: 200,
+      message: "2FA status retrieved successfully",
+      data: {
+        totpEnabled: user.totpEnabled
+      }
+    };
+  }
+
   // Signup method
   public async signup(firstName: string, lastName: string, email: string, password: string) {
     const existingUser = await this.prisma.user.findUnique({ where: { email } });
