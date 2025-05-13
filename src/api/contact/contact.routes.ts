@@ -1,7 +1,7 @@
 import express, { Router } from "express";
 import { ContactController } from "./contact.controller";
 import { contactRateLimiter } from "./contact.rateLimiting";
-import { authorizeAdmin } from "../../middlewares/authorization.middleware";
+import { authorize, authorizeAdmin } from "../../middlewares/authorization.middleware";
 
 export default class ContactRouter {
     private router: Router;
@@ -24,6 +24,7 @@ export default class ContactRouter {
         // Get all contact forms (Admin only)
         this.router.get(
             "/get-all",
+            authorize,
             authorizeAdmin,
             this.contactController.getAllContactForms.bind(this.contactController)
         );
@@ -31,6 +32,7 @@ export default class ContactRouter {
         // Get contact form by ID (Admin only)
         this.router.get(
             "/get/:id",
+            authorize,
             authorizeAdmin,
             this.contactController.getContactFormById.bind(this.contactController)
         );
@@ -38,6 +40,7 @@ export default class ContactRouter {
         // Delete contact form (Admin only)
         this.router.delete(
             "/delete/:id",
+            authorize,
             authorizeAdmin,
             this.contactController.deleteContactForm.bind(this.contactController)
         );
