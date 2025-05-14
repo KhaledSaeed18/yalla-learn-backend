@@ -33,7 +33,11 @@ export class ServiceGigService {
                         id: true,
                         firstName: true,
                         lastName: true,
-                        email: true
+                        email: true,
+                        avatar: true,
+                        phoneNumber: true,
+                        location: true,
+                        bio: true,
                     }
                 }
             }
