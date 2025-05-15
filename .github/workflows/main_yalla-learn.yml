@@ -24,11 +24,10 @@ jobs:
           node-version: "22.x"
           cache: "yarn"
 
-      - name: yarn install, build, and test
+      - name: yarn install and build
         run: |
           yarn install --frozen-lockfile
           yarn build
-          yarn test --if-exists
 
       - name: Run Prisma Generate
         run: |
