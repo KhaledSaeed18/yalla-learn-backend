@@ -23,19 +23,21 @@ dotenv.config();
 const app: Express = express();
 const server = http.createServer(app);
 
-const allowedOrigins = [
-    "http://localhost:3000",
-    "https://www.yalla-learn.me"
-];
+// const allowedOrigins = [
+//     "http://localhost:3000",
+//     "https://www.yalla-learn.me"
+// ];
 
-// CORS middleware
-app.use(
-    cors({
-        origin: allowedOrigins,
-        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-        allowedHeaders: ["Content-Type", "Authorization"],
-    })
-);
+// // CORS middleware
+// app.use(
+//     cors({
+//         origin: allowedOrigins,
+//         methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+//         allowedHeaders: ["Content-Type", "Authorization"],
+//     })
+// );
+
+app.use(cors());
 
 // Security middleware
 app.use(securityHeaders);
