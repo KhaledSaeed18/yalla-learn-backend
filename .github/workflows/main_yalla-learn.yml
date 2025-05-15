@@ -21,13 +21,18 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: "22.x"
+          cache: "yarn"
 
-      - name: npm install, build, and test
+      - name: yarn install, build, and test
         run: |
-          npm install
-          npm run build --if-present
-          npm run test --if-present
+          yarn install --frozen-lockfile
+          yarn build
+          yarn test --if-exists
+
+      - name: Run Prisma Generate
+        run: |
+          yarn prisma generate
 
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
@@ -42,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     environment:
-      name: 'Production'
+      name: "Production"
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
       id-token: write #This is required for requesting the JWT
@@ -56,7 +61,7 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: unzip release.zip
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -64,11 +69,10 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_51131F6D20EC4A7A8A1709F52B289250 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4E2F1C858F5B40D9A3B6A9822C695E5E }}
 
-      - name: 'Deploy to Azure Web App'
+      - name: "Deploy to Azure Web App"
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'yalla-learn'
-          slot-name: 'Production'
+          app-name: "yalla-learn"
+          slot-name: "Production"
           package: .
-          
