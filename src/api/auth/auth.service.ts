@@ -1,7 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { generateAccessToken, generateRefreshToken } from "../../utils/generateTokens";
-import { Request } from "express";
 import jwt, { TokenExpiredError } from "jsonwebtoken";
 import { generateOTP } from "../../utils/generateOTP";
 import { sendPasswordResetEmail, sendVerificationEmail } from "../../mails/email";
@@ -18,57 +17,6 @@ export class AuthService {
   // Helper method to generate code expiry
   private generateCodeExpiry(): Date {
     return new Date(Date.now() + 15 * 60 * 1000);
-  }
-
-  // Helper method to extract device info from request
-  private extractDeviceInfo(req: Request): {
-    ipAddress: string | null;
-    userAgent: string | null;
-    device: string | null;
-    location: string | null;
-  } {
-    // Get Request IP address
-    const ipAddress =
-      (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ||
-      req.socket.remoteAddress ||
-      null;
-
-    // Get user agent (Device info)
-    const userAgent = req.headers['user-agent'] || null;
-
-    // Device type detection
-    let device = 'Unknown';
-    if (userAgent) {
-      if (/Mobile|Android|iPhone|iPad|iPod/i.test(userAgent)) {
-        device = 'Mobile';
-      } else if (/Tablet|iPad/i.test(userAgent)) {
-        device = 'Tablet';
-      } else {
-        device = 'Desktop';
-      }
-    }
-
-    // TODO: Implement location detection (get location from IP address)
-    const location = null;
-
-    return { ipAddress, userAgent, device, location };
-  }
-
-  // Function to record login attempt
-  private async recordLoginAttempt(userId: string, req: Request, successful: boolean) {
-    const { ipAddress, userAgent, device, location } = this.extractDeviceInfo(req);
-
-    await this.prisma.loginHistory.create({
-      data: {
-        userId,
-        ipAddress,
-        userAgent,
-        device,
-        location,
-        successful,
-        loginTime: new Date()
-      }
-    });
   }
 
   // Check 2FA status for authenticated user
@@ -148,25 +96,15 @@ export class AuthService {
     };
   }
 
-  // Signin method with login history
-  public async signin(email: string, password: string, req: Request) {
+  // Signin method
+  public async signin(email: string, password: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      const existingEmail = await this.prisma.user.findFirst({
-        where: { email },
-        select: { id: true }
-      });
-
-      if (existingEmail) {
-        await this.recordLoginAttempt(existingEmail.id, req, false);
-      }
-
       throw new Error("Invalid email or password");
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      await this.recordLoginAttempt(user.id, req, false);
       throw new Error("Invalid email or password");
     }
 
@@ -201,8 +139,6 @@ export class AuthService {
     }
 
     // Regular flow for users without 2FA
-    await this.recordLoginAttempt(user.id, req, true);
-
     const accessToken = generateAccessToken(user.id, user.role);
     const refreshToken = generateRefreshToken(user.id, user.role);
 
@@ -227,16 +163,6 @@ export class AuthService {
         refreshToken,
       },
     };
-  }
-
-  // Get login history for a user
-  public async getLoginHistory(userId: string) {
-    const loginHistory = await this.prisma.loginHistory.findMany({
-      where: { userId: userId },
-      orderBy: { loginTime: 'desc' },
-    });
-
-    return loginHistory;
   }
 
   // Refresh access token method
@@ -506,7 +432,7 @@ export class AuthService {
   }
 
   // Signin with 2FA
-  public async signin2FA(email: string, password: string, token: string, req: Request) {
+  public async signin2FA(email: string, password: string, token: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new Error("Invalid email or password");
@@ -514,7 +440,6 @@ export class AuthService {
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      await this.recordLoginAttempt(user.id, req, false);
       throw new Error("Invalid email or password");
     }
 
@@ -535,13 +460,9 @@ export class AuthService {
 
       const isValid = verifyTOTP(token, user.totpSecret);
       if (!isValid) {
-        await this.recordLoginAttempt(user.id, req, false);
         throw new Error("Invalid 2FA token");
       }
     }
-
-    // Record successful login attempt
-    await this.recordLoginAttempt(user.id, req, true);
 
     // Generate access and refresh tokens
     const accessToken = generateAccessToken(user.id, user.role);

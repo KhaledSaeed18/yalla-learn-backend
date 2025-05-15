@@ -31,7 +31,6 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  LoginHistory LoginHistory[]
   BlogPost     BlogPost[]
   Question     Question[]
   Answer       Answer[]
@@ -51,24 +50,6 @@ model User {
 enum Role {
   USER
   ADMIN
-}
-
-model LoginHistory {
-  id         String   @id @default(cuid())
-  userId     String
-  ipAddress  String?
-  userAgent  String?
-  device     String?
-  location   String?
-  loginTime  DateTime @default(now())
-  successful Boolean  @default(true)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
 }
 
 model BlogCategory {

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import AuthController from "./auth.controller";
-import { loginHistoryLimiter, refreshTokenLimiter, signinLimiter, signupLimiter, verifyEmailLimiter, resendVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter, setup2FALimiter, verify2FALimiter, signin2FALimiter, disable2FALimiter, check2FAStatusLimiter } from "./auth.rateLimiting";
+import { refreshTokenLimiter, signinLimiter, signupLimiter, verifyEmailLimiter, resendVerificationLimiter, forgotPasswordLimiter, resetPasswordLimiter, setup2FALimiter, verify2FALimiter, signin2FALimiter, disable2FALimiter, check2FAStatusLimiter } from "./auth.rateLimiting";
 import { validateDisable2FA, validateForgotPassword, validateLogin2FA, validateRefreshToken, validateResendVerification, validateResetPassword, validateSignin, validateSignup, validateVerify2FA, validateVerifyEmail } from "./auth.validation";
 import { authorize } from "../../middlewares/authorization.middleware";
 import { sanitizeRequestBody } from '../../middlewares/sanitizeBody.middleware';
@@ -32,14 +32,6 @@ export default class AuthRouter {
       sanitizeRequestBody,
       validateSignin,
       this.authController.signin
-    );
-
-    // Get user login history route
-    this.router.get(
-      "/login-history",
-      loginHistoryLimiter,
-      authorize,
-      this.authController.getLoginHistory
     );
 
     // Refresh token route

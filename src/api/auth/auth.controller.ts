@@ -9,7 +9,6 @@ export default class AuthController {
     this.authService = new AuthService();
     this.signup = this.signup.bind(this);
     this.signin = this.signin.bind(this);
-    this.getLoginHistory = this.getLoginHistory.bind(this);
     this.refreshAccessToken = this.refreshAccessToken.bind(this);
     this.verifyEmail = this.verifyEmail.bind(this);
     this.resendVerificationCode = this.resendVerificationCode.bind(this);
@@ -49,7 +48,7 @@ export default class AuthController {
     try {
       const { email, password } = req.body;
 
-      const result = await this.authService.signin(email, password, req);
+      const result = await this.authService.signin(email, password);
 
       res.status(200).json(result);
     } catch (err) {
@@ -62,26 +61,6 @@ export default class AuthController {
         return;
       }
       next(errorHandler(500, (err as Error).message || "Signin failed, Please try again"));
-    }
-  }
-
-  // Get login history controller
-  async getLoginHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const userId = req.user?.id as string;
-
-      const loginHistory = await this.authService.getLoginHistory(userId);
-
-      res.status(200).json({
-        status: "success",
-        statusCode: 200,
-        message: "Login history fetched successfully",
-        data: {
-          loginHistory
-        }
-      });
-    } catch (err) {
-      next(errorHandler(500, (err as Error).message || "Failed to fetch login history"));
     }
   }
 
@@ -308,7 +287,7 @@ export default class AuthController {
         return;
       }
 
-      const result = await this.authService.signin2FA(email, password, token, req);
+      const result = await this.authService.signin2FA(email, password, token);
 
       res.status(200).json(result);
     } catch (err) {

@@ -3,9 +3,6 @@ import dotenv from 'dotenv';
 import cors from "cors";
 import { ErrorMiddleware } from './middlewares/error.middleware';
 import { securityHeaders } from './middlewares/securityHeaders.middleware';
-import http from 'http';
-import { connectMongoDB } from './config/mongodb';
-import { SocketService } from './socket/chat/socket.service';
 
 import AuthRouter from './api/auth/auth.routes';
 import BlogRouter from './api/blog/blog.routes';
@@ -21,23 +18,20 @@ import ContactRouter from './api/contact/contact.routes';
 dotenv.config();
 
 const app: Express = express();
-const server = http.createServer(app);
 
-// const allowedOrigins = [
-//     "http://localhost:3000",
-//     "https://www.yalla-learn.me"
-// ];
+const allowedOrigins = [
+    "http://localhost:3000",
+    "https://www.yalla-learn.me"
+];
 
-// // CORS middleware
-// app.use(
-//     cors({
-//         origin: allowedOrigins,
-//         methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-//         allowedHeaders: ["Content-Type", "Authorization"],
-//     })
-// );
-
-app.use(cors());
+// CORS middleware
+app.use(
+    cors({
+        origin: allowedOrigins,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+    })
+);
 
 // Security middleware
 app.use(securityHeaders);
@@ -89,10 +83,6 @@ app.use(`${baseUrl}/expense-tracker`, expenseTrackerRouter.getRouter());
 const contactRouter = new ContactRouter();
 app.use(`${baseUrl}/contact`, contactRouter.getRouter());
 
-// Initialize Socket.io server
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const socketService = new SocketService(server);
-
 // 404 error handler
 app.use((_req: Request, res: Response) => {
     res.status(404).json({
@@ -106,9 +96,6 @@ app.use((_req: Request, res: Response) => {
 app.use(ErrorMiddleware.handleError);
 
 // start the server
-server.listen(port, () => {
+app.listen(port, () => {
     console.log(`Server is running on: http://localhost:${port}`);
 });
-
-// Connect to MongoDB
-connectMongoDB()
