@@ -31,20 +31,24 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  BlogPost     BlogPost[]
-  Question     Question[]
-  Answer       Answer[]
-  AnswerVote   AnswerVote[]
-  Listing      Listing[]
-  GigService   GigService[]
-  Board        Board[]
-  Task         Task[]
+  BlogPost   BlogPost[]
+  Question   Question[]
+  Answer     Answer[]
+  AnswerVote AnswerVote[]
+  Listing    Listing[]
+  GigService GigService[]
+  Board      Board[]
+  Task       Task[]
 
   // Expense tracker relations
   Expense         Expense[]
   Income          Income[]
   PaymentSchedule PaymentSchedule[]
   Semester        Semester[]
+
+  // Job relations
+  Job            Job[]
+  JobApplication JobApplication[]
 }
 
 enum Role {
@@ -458,15 +462,84 @@ enum UniversityPaymentType {
 }
 
 model ContactForm {
-  id      String  @id @default(cuid())
+  id      String @id @default(cuid())
   name    String
   email   String
   subject String
-  message String  @db.Text
+  message String @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([email])
   @@index([createdAt])
+}
+
+// Job models
+model Job {
+  id             String    @id @default(cuid())
+  title          String
+  company        String
+  location       String
+  description    String    @db.Text
+  requirements   String    @db.Text
+  salary         String?
+  type           JobType
+  status         JobStatus @default(ACTIVE)
+  postedBy       String
+  applicationUrl String?
+  deadline       DateTime?
+
+  user         User             @relation(fields: [postedBy], references: [id], onDelete: Cascade)
+  applications JobApplication[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postedBy])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  REMOTE
+}
+
+enum JobStatus {
+  ACTIVE
+  CLOSED
+  DRAFT
+}
+
+model JobApplication {
+  id          String            @id @default(cuid())
+  jobId       String
+  applicantId String
+  coverLetter String?           @db.Text
+  resume      String?
+  status      ApplicationStatus @default(PENDING)
+
+  job       Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applicant User @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([jobId, applicantId])
+  @@index([jobId])
+  @@index([applicantId])
+  @@index([status])
+}
+
+enum ApplicationStatus {
+  PENDING
+  UNDER_REVIEW
+  SHORTLISTED
+  REJECTED
+  ACCEPTED
 }

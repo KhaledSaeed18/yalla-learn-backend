@@ -14,6 +14,7 @@ import ChatRouter from './api/chat/chat.routes';
 import ServiceRouter from './api/services/services.routes';
 import ExpenseTrackerRouter from './api/expense-tracker/expense-tracker.routes';
 import ContactRouter from './api/contact/contact.routes';
+import JobRouter from './api/jobs/jobs.routes';
 
 dotenv.config();
 
@@ -82,6 +83,10 @@ app.use(`${baseUrl}/expense-tracker`, expenseTrackerRouter.getRouter());
 // Contact Form routes
 const contactRouter = new ContactRouter();
 app.use(`${baseUrl}/contact`, contactRouter.getRouter());
+
+// Jobs routes
+const jobRouter = new JobRouter();
+app.use(`${baseUrl}/jobs`, jobRouter.getRouter());
 
 // 404 error handler
 app.use((_req: Request, res: Response) => {
