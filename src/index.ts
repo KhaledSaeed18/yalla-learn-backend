@@ -10,7 +10,6 @@ import UserRouter from './api/user/user.routes';
 import QARouter from './api/qa/qa.routes';
 import KanbanRouter from './api/kanban/kanban.routes';
 import ListingRouter from './api/listings/listings.routes';
-import ChatRouter from './api/chat/chat.routes';
 import ServiceRouter from './api/services/services.routes';
 import ExpenseTrackerRouter from './api/expense-tracker/expense-tracker.routes';
 import ContactRouter from './api/contact/contact.routes';
@@ -71,10 +70,6 @@ app.use(`${baseUrl}/listings`, listingsRouter.getRouter());
 // Services routes
 const servicesRouter = new ServiceRouter();
 app.use(`${baseUrl}/services`, servicesRouter.getRouter());
-
-// Chat routes
-const chatRouter = new ChatRouter();
-app.use(`${baseUrl}/chat`, chatRouter.getRouter());
 
 // Expense Tracker routes
 const expenseTrackerRouter = new ExpenseTrackerRouter();
