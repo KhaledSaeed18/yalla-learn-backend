@@ -29,7 +29,7 @@ export default class ServiceRouter {
         // Get a service by ID
         this.router.get(
             '/get-service/:id',
-            authorize,
+            // authorize,
             serviceGetLimiter,
             this.serviceController.getServiceById
         );
@@ -38,7 +38,7 @@ export default class ServiceRouter {
         this.router.get(
             '/get-services',
             serviceAdminGetLimiter,
-            authorize,
+            // authorize,
             validateGetServicesQuery,
             this.serviceController.getAllServices
         );
