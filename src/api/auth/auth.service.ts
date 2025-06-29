@@ -56,16 +56,16 @@ export class AuthService {
     const verificationCode = generateOTP();
     const codeExpiry = this.generateCodeExpiry();
 
-    try {
-      await sendVerificationEmail(
-        email,
-        verificationCode,
-        firstName
-      );
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Error sending verification email: ${errorMessage}`);
-    }
+    // try {
+    //   await sendVerificationEmail(
+    //     email,
+    //     verificationCode,
+    //     firstName
+    //   );
+    // } catch (error: unknown) {
+    //   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    //   throw new Error(`Error sending verification email: ${errorMessage}`);
+    // }
 
     const newUser = await this.prisma.user.create({
       data: {
@@ -109,9 +109,9 @@ export class AuthService {
     }
 
     // Check if user is verified
-    if (!user.isVerified) {
-      throw new Error("Account not verified. Please verify your email address.");
-    }
+    // if (!user.isVerified) {
+    //   throw new Error("Account not verified. Please verify your email address.");
+    // }
 
     // Check if 2FA is enabled
     if (user.totpEnabled) {
